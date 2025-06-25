@@ -1,0 +1,960 @@
+{
+  "missing_imports": [
+    {
+      "file": "abu_new_infer_rnn_rates.py",
+      "line": 99,
+      "import": "ephys_data",
+      "error": "ModuleNotFoundError(\"No module named 'ephys_data'\")"
+    },
+    {
+      "file": "abu_new_infer_rnn_rates.py",
+      "line": 100,
+      "import": "visualize",
+      "error": "ModuleNotFoundError(\"No module named 'visualize'\")"
+    },
+    {
+      "file": "abu_new_infer_rnn_rates.py",
+      "line": 101,
+      "import": "model",
+      "error": "ModuleNotFoundError(\"No module named 'model'\")"
+    },
+    {
+      "file": "abu_new_infer_rnn_rates.py",
+      "line": 102,
+      "import": "train",
+      "error": "ModuleNotFoundError(\"No module named 'train'\")"
+    },
+    {
+      "file": "blechRNN-master/src/run_model.py",
+      "line": 12,
+      "import": "ephys_data",
+      "error": "ModuleNotFoundError(\"No module named 'ephys_data'\")"
+    },
+    {
+      "file": "blechRNN-master/src/run_model.py",
+      "line": 13,
+      "import": "visualize",
+      "error": "ModuleNotFoundError(\"No module named 'visualize'\")"
+    },
+    {
+      "file": "blechRNN-master/src/train.py",
+      "line": 20,
+      "import": "model",
+      "error": "ModuleNotFoundError(\"No module named 'model'\")"
+    }
+  ],
+  "duplicate_symbols": {
+    "unpickle_changepoints": [
+      "unpkl.py",
+      "unpkl_generator.py",
+      "VCCB-repositories-blech/unpkl.py",
+      "VCCB-repositories-blech/unpkl_generator.py"
+    ],
+    "extract_from_npz": [
+      "extract_npz_old.py",
+      "extract_npz.py",
+      "VCCB-repositories-blech/extract_npz_old.py",
+      "VCCB-repositories-blech/extract_npz.py"
+    ],
+    "plot_firing_rates": [
+      "deprecated_plots.py",
+      "deprecated_plots.py",
+      "VCCB-repositories-blech/deprecated_plots.py",
+      "VCCB-repositories-blech/deprecated_plots.py"
+    ],
+    "plot_changepoints_spiketrain": [
+      "deprecated_plots.py",
+      "deprecated_plots.py",
+      "VCCB-repositories-blech/deprecated_plots.py",
+      "VCCB-repositories-blech/deprecated_plots.py"
+    ],
+    "plot_averaged_pca_trajectories_thresholded_SEM": [
+      "taste_sep_pca_plotting_funcs.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "plot_pca_components_averaged_over_tastes": [
+      "pca_old_no_rnn.py",
+      "pca_old_no_rnn.py"
+    ],
+    "FiringRatePlotter._plot_segmented_cellwise": [
+      "class_plot_fr_line_heat_april.py",
+      "class_plot_fr_line_heat_april.py"
+    ],
+    "calc_fr_states": [
+      "calc_firing_rate_with_states.py",
+      "VCCB-repositories-blech/changepoint static sort pkl.py"
+    ],
+    "find_h5_files": [
+      "spike_train_to_npz2.py",
+      "spike_train_to_npz.py",
+      "VCCB-repositories-blech/spike_train_to_npz2.py",
+      "VCCB-repositories-blech/spike_train_to_npz.py"
+    ],
+    "extract_to_npz": [
+      "spike_train_to_npz2.py",
+      "spike_train_to_npz.py",
+      "VCCB-repositories-blech/spike_train_to_npz2.py",
+      "VCCB-repositories-blech/spike_train_to_npz.py"
+    ],
+    "plot_averaged_pca_trajectories": [
+      "pca_funcs_neuron_indiscriminate.py",
+      "pca_funcs_neuron_indiscriminate.py"
+    ],
+    "plot_explained_variance_combined": [
+      "pca_funcs_neuron_indiscriminate.py",
+      "pca_funcs_neuron_indiscriminate.py"
+    ],
+    "FrequencyAnalysisPipeline": [
+      "freuqency_analysis_suite_rnn_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "FrequencyAnalysisPipeline.__init__": [
+      "freuqency_analysis_suite_rnn_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "FrequencyAnalysisPipeline.get_data_columns": [
+      "freuqency_analysis_suite_rnn_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "FrequencyAnalysisPipeline.run": [
+      "freuqency_analysis_suite_rnn_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "FrequencyAnalysisPipeline._analyze_dataset": [
+      "freuqency_analysis_suite_rnn_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "FrequencyAnalysisPipeline._plot_full_trials_for_taste": [
+      "freuqency_analysis_suite_rnn_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "FrequencyAnalysisPipeline.compute_fft": [
+      "freuqency_analysis_suite_rnn_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "FrequencyAnalysisPipeline.save_fft": [
+      "freuqency_analysis_suite_rnn_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "FrequencyAnalysisPipeline.save_peaks": [
+      "freuqency_analysis_suite_rnn_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "FrequencyAnalysisPipeline.plot_individual_fft": [
+      "freuqency_analysis_suite_rnn_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "FrequencyAnalysisPipeline.plot_individual_periodogram": [
+      "freuqency_analysis_suite_rnn_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "FrequencyAnalysisPipeline.plot_lombscargle_periodogram": [
+      "freuqency_analysis_suite_rnn_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "FrequencyAnalysisPipeline.plot_spectrogram": [
+      "freuqency_analysis_suite_rnn_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "safe_spectrogram": [
+      "freuqency_analysis_suite_rnn_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "plot_spectrograms_for_latents": [
+      "freuqency_analysis_suite_rnn_class.py",
+      "backups/changepoint pkl static sort backup.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "update_state": [
+      "attractor_examples.py",
+      "attractor_examples.py",
+      "attractor_examples.py",
+      "attractor_examples.py",
+      "attractor_examples.py",
+      "attractor_examples.py"
+    ],
+    "RNNLatentProcessor": [
+      "RNNLatentprocessing.py",
+      "backups/backup_RNNPROCESSER.py"
+    ],
+    "RNNLatentProcessor.__init__": [
+      "RNNLatentprocessing.py",
+      "backups/backup_RNNPROCESSER.py"
+    ],
+    "RNNLatentProcessor.read_parquet_files": [
+      "RNNLatentprocessing.py",
+      "backups/backup_RNNPROCESSER.py"
+    ],
+    "RNNLatentProcessor.structure_latent_arrays": [
+      "RNNLatentprocessing.py",
+      "backups/backup_RNNPROCESSER.py"
+    ],
+    "RNNLatentProcessor.extract_changepoints": [
+      "RNNLatentprocessing.py",
+      "backups/backup_RNNPROCESSER.py"
+    ],
+    "RNNLatentProcessor.split_epochs_by_changepoints": [
+      "RNNLatentprocessing.py",
+      "backups/backup_RNNPROCESSER.py"
+    ],
+    "RNNLatentProcessor.run_robust_pca_analysis": [
+      "RNNLatentprocessing.py",
+      "backups/backup_RNNPROCESSER.py"
+    ],
+    "RNNLatentProcessor.compute_first_derivative": [
+      "RNNLatentprocessing.py",
+      "backups/backup_RNNPROCESSER.py"
+    ],
+    "RNNLatentProcessor.compute_second_derivative": [
+      "RNNLatentprocessing.py",
+      "backups/backup_RNNPROCESSER.py"
+    ],
+    "RNNLatentProcessor.save_analysis_outputs": [
+      "RNNLatentprocessing.py",
+      "backups/backup_RNNPROCESSER.py"
+    ],
+    "RNNLatentProcessor.full_pipeline": [
+      "RNNLatentprocessing.py",
+      "backups/backup_RNNPROCESSER.py"
+    ],
+    "RNNWarpingIntraAroundCP": [
+      "RNN_Intrastate_war_unwar_plotting_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "RNNWarpingIntraAroundCP.get_data_columns": [
+      "RNN_Intrastate_war_unwar_plotting_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "RNNWarpingIntraAroundCP.__init__": [
+      "RNN_Intrastate_war_unwar_plotting_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "RNNWarpingIntraAroundCP.extract_changepoints": [
+      "RNN_Intrastate_war_unwar_plotting_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "RNNWarpingIntraAroundCP.align_trials": [
+      "RNN_Intrastate_war_unwar_plotting_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "RNNWarpingIntraAroundCP._plot_non_windowed": [
+      "RNN_Intrastate_war_unwar_plotting_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "RNNWarpingIntraAroundCP._plot_windowed": [
+      "RNN_Intrastate_war_unwar_plotting_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "RNNWarpingIntraAroundCP._analyze_dataset": [
+      "RNN_Intrastate_war_unwar_plotting_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "RNNWarpingIntraAroundCP.run": [
+      "RNN_Intrastate_war_unwar_plotting_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "SignificanceTester": [
+      "sig_testing_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "SignificanceTester.__init__": [
+      "sig_testing_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "SignificanceTester.get_data_columns": [
+      "sig_testing_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "SignificanceTester.permutation_test": [
+      "sig_testing_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "SignificanceTester.colored_significance": [
+      "sig_testing_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "SignificanceTester.summarize_tests_console": [
+      "sig_testing_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "SignificanceTester.run": [
+      "sig_testing_class.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "calc_anova_cp": [
+      "deprecated_anova.py",
+      "VCCB-repositories-blech/deprecated_anova.py"
+    ],
+    "calc_fr_rr": [
+      "rollingwindoweg.py",
+      "rollingwindoweg.py",
+      "rollingwindoweg.py",
+      "rollingwindoweg.py",
+      "rollingwindoweg.py"
+    ],
+    "process_and_plot_fr_datasets": [
+      "changepoint static sort pkl_mirror.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "process_and_return_fr_datasets": [
+      "changepoint static sort pkl_mirror.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "plot_inferred_data_heatmaps": [
+      "changepoint static sort pkl_mirror.py",
+      "backups/changepoint pkl static sort backup.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "plot_all_rnns_with_changepoints": [
+      "changepoint static sort pkl_mirror.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "plot_pca_of_firing_rates": [
+      "changepoint static sort pkl_mirror.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "plot_individual_latents": [
+      "changepoint static sort pkl_mirror.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "get_data_columns": [
+      "changepoint static sort pkl_mirror.py",
+      "backups/changepoint pkl static sort backup.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "plot_pca_rnn_with_changepoints": [
+      "changepoint static sort pkl_mirror.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "plot_pca_rnn_all_trials_per_transition": [
+      "changepoint static sort pkl_mirror.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "process_and_plot_datasets": [
+      "changepoint static sort pkl_mirror.py",
+      "april_single_nrn_sem_war_unwar_plot.py",
+      "backups/changepoint pkl static sort backup.py"
+    ],
+    "find_copy_h5info": [
+      "find_extract_info.py",
+      "VCCB-repositories-blech/find_extract_info.py"
+    ],
+    "process_info_files": [
+      "find_extract_info.py",
+      "VCCB-repositories-blech/find_extract_info.py"
+    ],
+    "modify_tastes": [
+      "find_extract_info.py",
+      "VCCB-repositories-blech/find_extract_info.py"
+    ],
+    "interpolate_and_average_all_tastes": [
+      "interpolation_xr.py",
+      "VCCB-repositories-blech/interpolation_xr.py"
+    ],
+    "plot_thin_thick_rnn_latants": [
+      "backups/changepoint pkl static sort backup.py",
+      "backups/changepoint pkl static sort backup.py"
+    ]
+  },
+  "file_tree": [
+    "RNNLatentprocessing.py",
+    "RNN_Intrastate_war_unwar_plotting_class.py",
+    "VCCB-repositories-blech/changepoint static sort pkl.py",
+    "VCCB-repositories-blech/deprecated_anova.py",
+    "VCCB-repositories-blech/deprecated_plots.py",
+    "VCCB-repositories-blech/extract_npz.py",
+    "VCCB-repositories-blech/extract_npz_old.py",
+    "VCCB-repositories-blech/find_extract_info.py",
+    "VCCB-repositories-blech/interpolation_xr.py",
+    "VCCB-repositories-blech/spike_train_to_npz.py",
+    "VCCB-repositories-blech/spike_train_to_npz2.py",
+    "VCCB-repositories-blech/unpkl.py",
+    "VCCB-repositories-blech/unpkl_generator.py",
+    "abu_new_infer_rnn_rates.py",
+    "april_cp_descriptive_stats.py",
+    "april_single_nrn_sem_war_unwar_plot.py",
+    "attractor_examples.py",
+    "backup_freq_analysis_pipeline.py",
+    "backups/backup_RNNPROCESSER.py",
+    "backups/changepoint pkl static sort backup.py",
+    "blechRNN-master/src/get_data.py",
+    "blechRNN-master/src/model.py",
+    "blechRNN-master/src/run_model.py",
+    "blechRNN-master/src/train.py",
+    "calc_firing_rate_with_states.py",
+    "calc_fr_class_war_unwar.py",
+    "changepoint static sort pkl_mirror.py",
+    "check_package_integrity_prod.py",
+    "class_plot_fr_line_heat_april.py",
+    "current_plotting_funcs.py",
+    "deprecated_anova.py",
+    "deprecated_plots.py",
+    "extract_npz.py",
+    "extract_npz_old.py",
+    "find_extract_info.py",
+    "freuqency_analysis_suite_rnn_class.py",
+    "generate_parquet_sig_all.py",
+    "interpolation_xr.py",
+    "pca_funcs_neuron_indiscriminate.py",
+    "pca_old_no_rnn.py",
+    "read_parquets.py",
+    "rollingwindoweg.py",
+    "serialize_overlap.py",
+    "sig_testing_class.py",
+    "single_trial_sig_testing.py",
+    "spike_raster_class_plot_april.py",
+    "spike_train_to_npz.py",
+    "spike_train_to_npz2.py",
+    "taste_sep_pca_plotting_funcs.py",
+    "unpkl.py",
+    "unpkl_generator.py",
+    "unwarped_fr_plotting_funcs.py"
+  ],
+  "symbols_by_file": {
+    "unpkl.py": {
+      "funcs": [
+        "unpickle_changepoints"
+      ],
+      "classes": {}
+    },
+    "single_trial_sig_testing.py": {
+      "funcs": [
+        "thresh_min_fr_unwarped_hz",
+        "thresh_ttest_unwarped_hz"
+      ],
+      "classes": {}
+    },
+    "unpkl_generator.py": {
+      "funcs": [
+        "extract_valid_changepoints",
+        "unpickle_changepoints"
+      ],
+      "classes": {}
+    },
+    "extract_npz_old.py": {
+      "funcs": [
+        "extract_from_npz"
+      ],
+      "classes": {}
+    },
+    "deprecated_plots.py": {
+      "funcs": [
+        "plot_firing_rates",
+        "plot_firing_rates",
+        "plot_changepoints_spiketrain",
+        "plot_changepoints_spiketrain"
+      ],
+      "classes": {}
+    },
+    "generate_parquet_sig_all.py": {
+      "funcs": [
+        "sig_neurons_ttest",
+        "sig_neurons_war_ttest",
+        "sig_neurons_hz",
+        "sig_neurons_war_hz",
+        "consolidate_all_neuron_data",
+        "consolidate_all_neuron_war_data"
+      ],
+      "classes": {}
+    },
+    "unwarped_fr_plotting_funcs.py": {
+      "funcs": [
+        "plt_single_neuron_firing_unwarped_heatmap_thresholded",
+        "plt_single_neuron_firing_unwarped_line_thresholded",
+        "plot_neuron_mean_with_sem",
+        "plot_neuron_mean_with_sem_grid",
+        "plot_neuron_mean_with_sem_grid_from_class",
+        "plot_population_activity"
+      ],
+      "classes": {}
+    },
+    "taste_sep_pca_plotting_funcs.py": {
+      "funcs": [
+        "plot_averaged_pca_trajectories_sep_taste",
+        "plot_averaged_pca_trajectories_thresholded",
+        "plot_averaged_pca_trajectories_thresholded_SEM",
+        "plot_averaged_pca_heatmaps_all_taste",
+        "plot_pca_scatter",
+        "plot_pca_scatter_3d",
+        "calculate_pca_distances",
+        "plot_euclidean_distances_bar",
+        "plot_explained_variance_combined_by_taste"
+      ],
+      "classes": {}
+    },
+    "serialize_overlap.py": {
+      "funcs": [
+        "serialized_neuron_df",
+        "create_overlap_dataframes"
+      ],
+      "classes": {}
+    },
+    "check_package_integrity_prod.py": {
+      "funcs": [
+        "is_std_or_site",
+        "add_duplicate"
+      ],
+      "classes": {}
+    },
+    "april_cp_descriptive_stats.py": {
+      "funcs": [
+        "analyze_changepoints_to_file"
+      ],
+      "classes": {}
+    },
+    "spike_raster_class_plot_april.py": {
+      "funcs": [],
+      "classes": {
+        "SpikeRasterPlotter": [
+          "__init__",
+          "cli_options",
+          "plot_all",
+          "_plot_wholedata",
+          "_pad_align",
+          "_sort_by_non_nan_length",
+          "_extract_spike_times",
+          "_plot_wholedata_cellwise",
+          "_plot_wholedata_trialwise",
+          "_plot_cellwise",
+          "_plot_trialwise",
+          "debug_extract_from_calc",
+          "extract_sample_spike_array_from_calc",
+          "extract_sample_spike_array"
+        ]
+      }
+    },
+    "pca_old_no_rnn.py": {
+      "funcs": [
+        "whitened_pca_all_nrns_sep_taste",
+        "unconcatenate_pca_results_taste",
+        "plot_pca_components_by_trial",
+        "plot_pca_components_averaged_over_tastes",
+        "plot_pca_components_averaged_over_tastes",
+        "plot_pca_components_with_heatmap"
+      ],
+      "classes": {}
+    },
+    "class_plot_fr_line_heat_april.py": {
+      "funcs": [],
+      "classes": {
+        "FiringRatePlotter": [
+          "__init__",
+          "cli_options",
+          "plot_all",
+          "_pad_align",
+          "_sort_by_length",
+          "_draw_changepoints",
+          "_draw_stimulus",
+          "_save_figure",
+          "_plot_segmented_cellwise",
+          "_plot_segmented_cellwise",
+          "_plot_wholedata_cellwise",
+          "_plot_wholedata_trialwise"
+        ]
+      }
+    },
+    "calc_firing_rate_with_states.py": {
+      "funcs": [
+        "calc_fr_states"
+      ],
+      "classes": {}
+    },
+    "spike_train_to_npz2.py": {
+      "funcs": [
+        "find_h5_files",
+        "extract_to_npz"
+      ],
+      "classes": {}
+    },
+    "pca_funcs_neuron_indiscriminate.py": {
+      "funcs": [
+        "whitened_pca_all_nrns_all_taste",
+        "unconcatenate_pca_results_all",
+        "plot_averaged_pca_trajectories",
+        "plot_averaged_pca_trajectories",
+        "plot_all_pca_scatter",
+        "plot_all_pca_biplot",
+        "plot_all_pca_scatter_3d",
+        "plot_explained_variance_combined",
+        "plot_explained_variance_combined"
+      ],
+      "classes": {}
+    },
+    "freuqency_analysis_suite_rnn_class.py": {
+      "funcs": [
+        "safe_spectrogram",
+        "plot_spectrograms_for_latents"
+      ],
+      "classes": {
+        "FrequencyAnalysisPipeline": [
+          "__init__",
+          "get_data_columns",
+          "run",
+          "_analyze_dataset",
+          "_plot_full_trials_for_taste",
+          "compute_fft",
+          "save_fft",
+          "save_peaks",
+          "plot_individual_fft",
+          "plot_individual_periodogram",
+          "plot_lombscargle_periodogram",
+          "plot_spectrogram"
+        ]
+      }
+    },
+    "attractor_examples.py": {
+      "funcs": [
+        "update_state",
+        "update_state",
+        "update_state",
+        "update_state",
+        "update_state",
+        "update_state"
+      ],
+      "classes": {}
+    },
+    "RNNLatentprocessing.py": {
+      "funcs": [],
+      "classes": {
+        "RNNLatentProcessor": [
+          "__init__",
+          "read_parquet_files",
+          "structure_latent_arrays",
+          "extract_changepoints",
+          "split_epochs_by_changepoints",
+          "run_robust_pca_analysis",
+          "compute_first_derivative",
+          "compute_second_derivative",
+          "save_analysis_outputs",
+          "full_pipeline"
+        ]
+      }
+    },
+    "spike_train_to_npz.py": {
+      "funcs": [
+        "find_h5_files",
+        "extract_to_npz"
+      ],
+      "classes": {}
+    },
+    "RNN_Intrastate_war_unwar_plotting_class.py": {
+      "funcs": [],
+      "classes": {
+        "RNNWarpingIntraAroundCP": [
+          "get_data_columns",
+          "__init__",
+          "extract_changepoints",
+          "align_trials",
+          "_plot_non_windowed",
+          "_plot_windowed",
+          "_analyze_dataset",
+          "run"
+        ]
+      }
+    },
+    "read_parquets.py": {
+      "funcs": [
+        "all_nrns_to_df",
+        "read_parquet_files_into_dict"
+      ],
+      "classes": {}
+    },
+    "sig_testing_class.py": {
+      "funcs": [],
+      "classes": {
+        "SignificanceTester": [
+          "__init__",
+          "get_data_columns",
+          "permutation_test",
+          "colored_significance",
+          "summarize_tests_console",
+          "run"
+        ]
+      }
+    },
+    "deprecated_anova.py": {
+      "funcs": [
+        "calc_anova_cp"
+      ],
+      "classes": {}
+    },
+    "calc_fr_class_war_unwar.py": {
+      "funcs": [],
+      "classes": {
+        "CalcFRStates": [
+          "__init__",
+          "calc_fr_rr",
+          "run"
+        ]
+      }
+    },
+    "current_plotting_funcs.py": {
+      "funcs": [
+        "plt_inter_cpfr_avg_nrn_line",
+        "plt_inter_cpfr_avg_tr_line",
+        "plt_single_neuron_firing_warped_line",
+        "plt_single_neuron_firing_unwarped_line",
+        "plt_single_neuron_firing_unwarped_heatmap",
+        "plt_changepoints_scat",
+        "plt_changepoint_hist"
+      ],
+      "classes": {}
+    },
+    "rollingwindoweg.py": {
+      "funcs": [
+        "calc_fr_rr",
+        "calc_fr_rr",
+        "calc_fr_rr",
+        "calc_fr_rr",
+        "calc_fr_rr"
+      ],
+      "classes": {}
+    },
+    "backup_freq_analysis_pipeline.py": {
+      "funcs": [],
+      "classes": {}
+    },
+    "changepoint static sort pkl_mirror.py": {
+      "funcs": [
+        "process_and_plot_fr_datasets",
+        "process_and_return_fr_datasets",
+        "plot_inferred_data_heatmaps",
+        "plot_all_rnns_with_changepoints",
+        "plot_pca_of_firing_rates",
+        "plot_individual_latents",
+        "get_data_columns",
+        "plot_pca_rnn_with_changepoints",
+        "plot_pca_rnn_all_trials_per_transition",
+        "process_and_plot_datasets"
+      ],
+      "classes": {}
+    },
+    "extract_npz.py": {
+      "funcs": [
+        "extract_from_npz"
+      ],
+      "classes": {}
+    },
+    "april_single_nrn_sem_war_unwar_plot.py": {
+      "funcs": [
+        "plot_neuron_mean_with_sem_grid_single_dataset",
+        "find_dataset_in_sig_dict",
+        "prompt_plot_flags",
+        "process_and_plot_datasets"
+      ],
+      "classes": {}
+    },
+    "find_extract_info.py": {
+      "funcs": [
+        "find_copy_h5info",
+        "process_info_files",
+        "modify_tastes"
+      ],
+      "classes": {}
+    },
+    "abu_new_infer_rnn_rates.py": {
+      "funcs": [],
+      "classes": {}
+    },
+    "interpolation_xr.py": {
+      "funcs": [
+        "interpolate_and_average_all_tastes",
+        "interpolate_firing_rates"
+      ],
+      "classes": {}
+    },
+    "blechRNN-master/src/run_model.py": {
+      "funcs": [],
+      "classes": {}
+    },
+    "blechRNN-master/src/get_data.py": {
+      "funcs": [],
+      "classes": {}
+    },
+    "blechRNN-master/src/model.py": {
+      "funcs": [],
+      "classes": {
+        "CTRNN": [
+          "__init__",
+          "init_hidden",
+          "recurrence",
+          "forward"
+        ],
+        "CTRNN_plus_output": [
+          "__init__",
+          "forward"
+        ],
+        "autoencoderRNN": [
+          "__init__",
+          "forward"
+        ]
+      }
+    },
+    "blechRNN-master/src/train.py": {
+      "funcs": [
+        "train_model"
+      ],
+      "classes": {}
+    },
+    "backups/backup_RNNPROCESSER.py": {
+      "funcs": [],
+      "classes": {
+        "RNNLatentProcessor": [
+          "__init__",
+          "read_parquet_files",
+          "structure_latent_arrays",
+          "extract_changepoints",
+          "split_epochs_by_changepoints",
+          "run_robust_pca_analysis",
+          "compute_first_derivative",
+          "compute_second_derivative",
+          "full_pipeline",
+          "save_analysis_outputs"
+        ]
+      }
+    },
+    "backups/changepoint pkl static sort backup.py": {
+      "funcs": [
+        "process_and_plot_fr_datasets",
+        "process_and_return_fr_datasets",
+        "plot_inferred_data_heatmaps",
+        "plot_all_rnns_with_changepoints",
+        "plot_pca_of_firing_rates",
+        "plot_thin_thick_rnn_latants",
+        "plot_thin_thick_rnn_latants",
+        "plot_RNN_epochs_with_interpolation",
+        "plot_individual_latents",
+        "get_data_columns",
+        "plot_pca_rnn_with_changepoints",
+        "plot_pca_rnn_around_changepoints",
+        "plot_mean_vectors_rnn_around_changepoints",
+        "plot_rnn_around_changepoints",
+        "plot_pca_rnn_between_changepoints",
+        "plot_pca_rnn_all_trials_per_transition",
+        "plot_pca_rnn_all_trials_per_transition_aligned",
+        "plot_pca_rnn_all_trials_interpolated",
+        "get_data_columns",
+        "analyze_significant_epochs",
+        "quantify_significant_epochs",
+        "safe_spectrogram",
+        "plot_spectrograms_for_latents",
+        "uniform_spectrogram",
+        "plot_spectrograms_for_latents",
+        "process_and_plot_datasets",
+        "run_pca_analysis",
+        "run_pca_analysis_detailed",
+        "plot_inferred_data_heatmaps",
+        "plot_averaged_epochs_with_sem",
+        "plot_averaged_pca_trajectories_thresholded_SEM"
+      ],
+      "classes": {
+        "RNNWarpingIntraAroundCP": [
+          "get_data_columns",
+          "__init__",
+          "extract_changepoints",
+          "align_trials",
+          "_plot_non_windowed",
+          "_plot_windowed",
+          "_analyze_dataset",
+          "run"
+        ],
+        "SignificanceTester": [
+          "__init__",
+          "get_data_columns",
+          "permutation_test",
+          "colored_significance",
+          "summarize_tests_console",
+          "run"
+        ],
+        "FrequencyAnalysisPipeline": [
+          "__init__",
+          "get_data_columns",
+          "run",
+          "_analyze_dataset",
+          "_plot_full_trials_for_taste",
+          "compute_fft",
+          "save_fft",
+          "save_peaks",
+          "plot_individual_fft",
+          "plot_individual_periodogram",
+          "plot_lombscargle_periodogram",
+          "plot_spectrogram"
+        ]
+      }
+    },
+    "VCCB-repositories-blech/unpkl.py": {
+      "funcs": [
+        "unpickle_changepoints"
+      ],
+      "classes": {}
+    },
+    "VCCB-repositories-blech/unpkl_generator.py": {
+      "funcs": [
+        "unpickle_changepoints"
+      ],
+      "classes": {}
+    },
+    "VCCB-repositories-blech/extract_npz_old.py": {
+      "funcs": [
+        "extract_from_npz"
+      ],
+      "classes": {}
+    },
+    "VCCB-repositories-blech/deprecated_plots.py": {
+      "funcs": [
+        "plot_firing_rates",
+        "plot_firing_rates",
+        "plot_changepoints_spiketrain",
+        "plot_changepoints_spiketrain"
+      ],
+      "classes": {}
+    },
+    "VCCB-repositories-blech/changepoint static sort pkl.py": {
+      "funcs": [
+        "calc_fr_states",
+        "plt_inter_cpfr"
+      ],
+      "classes": {}
+    },
+    "VCCB-repositories-blech/spike_train_to_npz2.py": {
+      "funcs": [
+        "find_h5_files",
+        "extract_to_npz"
+      ],
+      "classes": {}
+    },
+    "VCCB-repositories-blech/spike_train_to_npz.py": {
+      "funcs": [
+        "find_h5_files",
+        "extract_to_npz"
+      ],
+      "classes": {}
+    },
+    "VCCB-repositories-blech/deprecated_anova.py": {
+      "funcs": [
+        "calc_anova_cp"
+      ],
+      "classes": {}
+    },
+    "VCCB-repositories-blech/extract_npz.py": {
+      "funcs": [
+        "extract_from_npz"
+      ],
+      "classes": {}
+    },
+    "VCCB-repositories-blech/find_extract_info.py": {
+      "funcs": [
+        "find_copy_h5info",
+        "process_info_files",
+        "modify_tastes"
+      ],
+      "classes": {}
+    },
+    "VCCB-repositories-blech/interpolation_xr.py": {
+      "funcs": [
+        "interpolate_and_average_all_tastes"
+      ],
+      "classes": {}
+    }
+  }
+}
