@@ -46,7 +46,7 @@ Two main entry points:
 | `optuna_multiobjective.py` | Multi-objective functions (AICr/obs + loss-LL correlation), Pareto front plotting and saving. |
 | `optuna_core.py` | Single-objective functions (legacy), `run_optimized_pipeline` for running the full pipeline with best params. |
 
-## Config parameters 
+## Config parameters  
 
 Set in `blechrnn_config.json` under `"parameters"`:
 
