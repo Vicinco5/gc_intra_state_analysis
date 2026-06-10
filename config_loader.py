@@ -30,20 +30,18 @@ def load_config(config_path):
             sys.path.append(p)
 
     # --- Parameters ---
-    params = dict(
-        train_steps=config['parameters']['train_steps'],
-        hidden_size=config['parameters']['hidden_size'],
-        bin_size=config['parameters']['bin_size'],
-        train_test_split=config['parameters']['train_test_split'],
-        use_pca=config['parameters']['use_pca'],
-        retrain=config['parameters']['retrain'],
-        time_lims=config['parameters']['time_lims'],
-        loss_name=config['parameters'].get('loss_name', 'mse'),
-        patience=config['parameters'].get('patience', 12000),
-        validation_mode=config['parameters'].get('validation_mode', 'split'),  # 'split' or 'loo'. Split is defaulkt
-        loo_train_steps=config['parameters'].get('loo_train_steps', 3000),
-        loo_patience=config['parameters'].get('loo_patience', 75),
-    )
+    # Start with everything in the JSON so new keys flow through automatically
+    params = dict(config['parameters'])
+
+    # Apply defaults for optional keys that may be absent
+    params.setdefault('loss_name', 'mse')
+    params.setdefault('patience', 12000)
+    params.setdefault('validation_mode', 'split')   # 'split' or 'loo'; split is default
+    params.setdefault('loo_train_steps', 3000)
+    params.setdefault('loo_patience', 75)
+    params.setdefault('rnn_layers', 2)
+    params.setdefault('dropout', 0.2)
+    params.setdefault('lr', 0.001)
 
     # --- Paths ---
     h5_dir = config['paths']['h5_dir']

@@ -186,6 +186,13 @@ def preprocess_taste(taste_spikes, bin_size, stim_time_val, use_pca=False):
     if use_pca:
         print('  Performing PCA on inputs')
         inputs, pca_obj = apply_pca(inputs, scaler, n_components=0.95)
+    if use_pca and pca_obj is not None:
+        evr = pca_obj.explained_variance_ratio_
+        cum = np.cumsum(evr)
+        print(f"    [PCA] {len(evr)} components | "
+            f"total var explained: {cum[-1]*100:.1f}%")
+        for i, (e, c) in enumerate(zip(evr, cum)):
+            print(f"      PC{i:2d}: {e*100:5.2f}%  (cumulative {c*100:5.1f}%)")
 
     # Context
     stim_time_bin = stim_time_val // bin_size

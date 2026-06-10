@@ -46,7 +46,7 @@ def get_criterion(loss_name):
 
 import json
 # load in the configs: 
-config_path = '/home/vincent/Senior thesis work/blechRNN-master/config/blechrnn_config.json'
+config_path = '/home/vincent/Senior thesis work/blechRNN-master/src/rnn_v2/blechrnn_config.json'
 # ----------------------------------------------------------------
 # Optuna override (set to True to use optimized params from Optuna)
 # NOTE: you really need to know which ones you want to use. Also, be aware that this applies to ALL datasets (hehe). 
@@ -54,7 +54,7 @@ config_path = '/home/vincent/Senior thesis work/blechRNN-master/config/blechrnn_
 USE_OPTUNA_PARAMS = False
 OPTUNA_PARAMS_PATH = '/home/vincent/Senior thesis work/blechRNN-master/jan2026validationR1_testing/optuna_optimization/AM26_4Tastes_200826_101430_repacked/optimized_params_used.json'
 config, paths, params, criterion = load_config(config_path)
-
+# IF WE DON'T USE THE OPTUNA STUFF (which tbh is a bit scuffed) then we will use the default params in the params 
 if USE_OPTUNA_PARAMS:
     with open(OPTUNA_PARAMS_PATH, 'r') as f:
         optuna_data = json.load(f)
@@ -135,7 +135,12 @@ for subdir in sorted(os.listdir(paths['h5_dir'])):
 
         # --- Time slice ---
         taste_spikes = taste_spikes[..., params['time_lims'][0]:params['time_lims'][1]]
-
+        # NOTE: Trying a bin of 50 ms to improve loss -- as 25 ms was resulting in a PCA spectrum of the data with no discernable elbow 
+        # I think that PCA'd inputs not having an elbow may legitimately be a problem as the network tries to fit to the data 
+        # If I have linear, damn near isotropic, nearly full rank data (16 PC's between 9.7 and 4% variance, linspace)
+        # It is also possible that straight binning may or may not be quite the right idea with respect to fitting this data-- 
+        # now, I want to avoid doing too much in terms of pre-smoothing data or whatever else 
+        # bottom line: I do not want the network to be dominated by isotropic data 
         # --- Preprocess ---
         prep = preprocess_taste(
             taste_spikes,
@@ -155,7 +160,9 @@ for subdir in sorted(os.listdir(paths['h5_dir'])):
 
         # --- Model path ---
         model_name = (f'taste_{taste_ind}_hidden_{params["hidden_size"]}'
-                      f'_loss_{params["loss_name"]}')
+              f'_layers_{params.get("rnn_layers", 2)}'
+              f'_drop_{params.get("dropout", 0.2)}'
+              f'_loss_{params["loss_name"]}')
         model_save_path = os.path.join(artifacts_dir, f'{model_name}.pt')
 
         # ==============================================================
@@ -173,14 +180,17 @@ for subdir in sorted(os.listdir(paths['h5_dir'])):
                 criterion=criterion,
                 train_steps=params['train_steps'],
                 patience=params['patience'],
+                lr=params['lr'],                      # ADD missing param
+                rnn_layers=params['rnn_layers'],      # ADD missing param
+                dropout=params['dropout'],            # ADD missing param 
                 retrain=params['retrain'],
                 model_save_path=model_save_path,
                 artifacts_dir=artifacts_dir,
                 taste_ind=taste_ind,
-                loo_train_steps = params.get('loo_train_steps'),
-                loo_patience=params.get('loo_patience'), 
+                loo_train_steps=params.get('loo_train_steps'),
+                loo_patience=params.get('loo_patience'),
                 scaler=prep['scaler'],
-                pca_obj=prep['pca_obj'], 
+                pca_obj=prep['pca_obj'],
                 raw_labels_tensor=prep['raw_labels_tensor'],
             )
 

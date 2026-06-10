@@ -162,11 +162,19 @@ class autoencoderRNN(nn.Module):
             decoder : latent -> output
         """
         super(autoencoderRNN, self).__init__()
+        # self.encoder = nn.Sequential(
+        #         nn.Linear(input_size, sum((input_size, hidden_size))//2),
+        #         nn.Sigmoid(),
+        #         nn.Linear(sum((input_size, hidden_size))//2, hidden_size),
+        #         nn.Sigmoid(),
+        #         )
+        # NOTE: new: trying different encoder scheme-- tanh functions that are non-saturating 
+        # bc two sigmoids really do squash into (0,1)
         self.encoder = nn.Sequential(
                 nn.Linear(input_size, sum((input_size, hidden_size))//2),
-                nn.Sigmoid(),
+                nn.Tanh(),
                 nn.Linear(sum((input_size, hidden_size))//2, hidden_size),
-                nn.Sigmoid(),
+                nn.Tanh(),
                 )
         self.rnn = nn.RNN(
                 hidden_size, 

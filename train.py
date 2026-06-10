@@ -286,6 +286,7 @@ def train_model(
         # # Reshape to (SeqLen x Batch, OutputSize)
         loss = criterion(output, labels)
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(net.parameters(), max_norm=1.0)  # Gradient clipping -- control the moments when a stochastic gradient does a stochastic
         optimizer.step()    # Does the update
 
         # Only compute cross_val_loss every 100 steps
