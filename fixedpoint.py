@@ -217,7 +217,12 @@ def find_fixed_points(
                     if verbose:
                         print(f"    All points converged/stopped at step {step}")
                     break
-    
+            # for this here: active: literally, how many of my 100 inits via adam are still being optimized for 
+            # literally just a progress indicator. Deactivates when either converges or gets stuck outside of patience. 
+            # tol: the tolerance threshold that I set (eitehr 1e-6 or 1e-5 for fixed vs rolling fixed point)
+            # min_q: the smallest q val across inits -- recall it's q(h) = ||F(h,x) - h||^2 
+            # think of this sort of as the speed at which the rnn moves h in 1 step. Q=0; the point maps to itself
+            # and there is 0 movement in the actual point. 
             if verbose and step % 1000 == 0:
                 n_active = active.sum().item()
                 min_q = best_q.min().item()
@@ -557,6 +562,246 @@ def plot_rolling_fixed_points(rolling_results, latent_trajectories=None,
     plt.close(fig)
  
  
+def plot_eigenvalue_complex_plane(
+        rolling_results,
+        hmm_changepoints=None,
+        title='Eigenvalue Trajectories',
+        output_dir=None,
+        filename='eigenvalues_complex_plane.png',
+        track=True,
+        ):
+    """
+    Plot Jacobian eigenvalues in the complex plane across timepoints.
+ 
+    The unit circle is the stability boundary: eigenvalues inside are
+    contracting (stable), outside are expanding (unstable). Watching an
+    eigenvalue cross the circle is a direct view of a bifurcation.
+ 
+    Args:
+        rolling_results: list of dicts from rolling_fixed_points
+        hmm_changepoints: optional list of time indices where HMM detects
+            transitions. If a rolling timepoint matches a changepoint, its
+            eigenvalues are highlighted.
+        title: str
+        output_dir: str
+        filename: str
+        track: bool — if True, connect eigenvalues across consecutive
+            timepoints with faint lines (nearest-neighbor matching)
+ 
+    Notes:
+        Eigenvalues come in complex-conjugate pairs for real matrices, so
+        the plot is symmetric about the real axis. A pair off the real axis
+        means rotational/oscillatory dynamics around that fixed point.
+    """
+    valid = [r for r in rolling_results if len(r['fixed_points']) > 0]
+    if not valid:
+        print("  No fixed points to plot eigenvalues for.")
+        return
+ 
+    time_indices = [r['time_idx'] for r in valid]
+    cmap = plt.cm.viridis
+    norm = plt.Normalize(min(time_indices), max(time_indices))
+ 
+    fig, ax = plt.subplots(figsize=(9, 9))
+ 
+    # Unit circle (stability boundary)
+    theta = np.linspace(0, 2 * np.pi, 200)
+    ax.plot(np.cos(theta), np.sin(theta), 'k--', alpha=0.5,
+            linewidth=1.5, label='Unit circle (|λ|=1)')
+    ax.axhline(0, color='gray', linewidth=0.5, alpha=0.4)
+    ax.axvline(0, color='gray', linewidth=0.5, alpha=0.4)
+ 
+    # For tracking: collect all eigenvalues per timepoint (across all FPs)
+    # We plot every eigenvalue from every fixed point at every timepoint.
+    prev_eigs = None
+    for r in valid:
+        t_idx = r['time_idx']
+        color = cmap(norm(t_idx))
+        is_changepoint = (hmm_changepoints is not None and
+                          t_idx in hmm_changepoints)
+ 
+        # Gather all eigenvalues at this timepoint
+        all_eigs_this_t = []
+        for eigs in r['eigenvalues']:
+            all_eigs_this_t.extend(eigs)
+        all_eigs_this_t = np.array(all_eigs_this_t)
+ 
+        if len(all_eigs_this_t) == 0:
+            continue
+ 
+        # Plot
+        marker_size = 90 if is_changepoint else 40
+        edge = 'red' if is_changepoint else 'k'
+        edge_w = 2.0 if is_changepoint else 0.5
+        ax.scatter(all_eigs_this_t.real, all_eigs_this_t.imag,
+                   c=[color], s=marker_size, edgecolors=edge,
+                   linewidths=edge_w, alpha=0.8, zorder=4)
+ 
+        # Track: connect to nearest eigenvalue at previous timepoint
+        if track and prev_eigs is not None:
+            for e in all_eigs_this_t:
+                # Find nearest previous eigenvalue
+                dists = np.abs(prev_eigs - e)
+                nearest = prev_eigs[np.argmin(dists)]
+                ax.plot([nearest.real, e.real], [nearest.imag, e.imag],
+                        color=color, alpha=0.3, linewidth=0.8, zorder=2)
+ 
+        prev_eigs = all_eigs_this_t
+ 
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    cbar = plt.colorbar(sm, ax=ax, label='Time index', shrink=0.7)
+ 
+    ax.set_xlabel('Re(λ)')
+    ax.set_ylabel('Im(λ)')
+    ax.set_title(title)
+    ax.set_aspect('equal')
+    ax.legend(loc='upper left', fontsize=9)
+ 
+    # Annotate the changepoint highlighting in the legend area
+    if hmm_changepoints is not None:
+        ax.scatter([], [], c='gray', s=90, edgecolors='red', linewidths=2.0,
+                   label='At HMM changepoint')
+        ax.legend(loc='upper left', fontsize=9)
+ 
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+        fig.savefig(os.path.join(output_dir, filename),
+                    bbox_inches='tight', dpi=200)
+    plt.close(fig)
+    print(f"  Saved eigenvalue complex plane: {filename}")
+ 
+ 
+# ----------------------------------------------------------------
+# 2. Distance from trajectory to nearest fixed point over time
+# ----------------------------------------------------------------
+ 
+def plot_distance_to_trajectory(
+        rolling_results,
+        latent_trajectories,
+        trial_idx=0,
+        hmm_changepoints=None,
+        title='Distance to Nearest Fixed Point',
+        output_dir=None,
+        filename='distance_to_fp.png',
+        only_stable=False,
+        ):
+    """
+    Plot the distance from the actual latent state to the nearest fixed point
+    at each rolling timepoint.
+ 
+    Low distance = the trajectory is sitting in/near an attractor (a "state").
+    High distance = the trajectory is in transit between fixed points.
+ 
+    Overlaying HMM changepoints tests the hypothesis that HMM states
+    correspond to attractor-dwelling and transitions to between-attractor
+    flight.
+ 
+    Args:
+        rolling_results: list of dicts from rolling_fixed_points
+        latent_trajectories: (time, trials, hidden_size) numpy array
+        trial_idx: int — which trial's trajectory to measure against
+            (should match the trial_idx used in rolling_fixed_points)
+        hmm_changepoints: optional list of time indices to overlay as vertical lines
+        title: str
+        output_dir: str
+        filename: str
+        only_stable: bool — if True, measure distance only to stable fixed
+            points (attractors), ignoring saddles/unstable points
+ 
+    Notes:
+        The fixed points at timepoint t are those found conditioned on the
+        input at timepoint t, so this measures how close the trajectory is
+        to the fixed points of its *instantaneous* dynamics.
+    """
+    valid = [r for r in rolling_results if len(r['fixed_points']) > 0]
+    if not valid:
+        print("  No fixed points for distance plot.")
+        return
+ 
+    time_indices = []
+    distances = []
+    nearest_stability = []
+ 
+    for r in valid:
+        t_idx = r['time_idx']
+        fps = r['fixed_points']
+        stability = r['stability']
+ 
+        # Optionally restrict to stable fixed points
+        if only_stable:
+            stable_mask = [i for i, s in enumerate(stability) if s == 'stable']
+            if not stable_mask:
+                continue
+            fps_use = fps[stable_mask]
+            stab_use = [stability[i] for i in stable_mask]
+        else:
+            fps_use = fps
+            stab_use = stability
+ 
+        # Actual latent state at this timepoint
+        state = latent_trajectories[t_idx, trial_idx, :]  # (hidden_size,)
+ 
+        # Distance to each fixed point, take the minimum
+        dists = np.linalg.norm(fps_use - state[None, :], axis=1)
+        min_idx = np.argmin(dists)
+ 
+        time_indices.append(t_idx)
+        distances.append(dists[min_idx])
+        nearest_stability.append(stab_use[min_idx])
+ 
+    if not time_indices:
+        print("  No valid timepoints for distance plot.")
+        return
+ 
+    fig, ax = plt.subplots(figsize=(12, 5))
+ 
+    # Color the line segments / points by the stability of the nearest FP
+    stab_colors = {'stable': 'green', 'saddle': 'orange', 'unstable': 'red'}
+    point_colors = [stab_colors.get(s, 'gray') for s in nearest_stability]
+ 
+    # Connecting line
+    ax.plot(time_indices, distances, '-', color='steelblue',
+            linewidth=1.5, alpha=0.6, zorder=2)
+    # Points colored by nearest-FP stability
+    ax.scatter(time_indices, distances, c=point_colors, s=60,
+               edgecolors='k', linewidths=0.5, zorder=3)
+ 
+    # HMM changepoints as vertical lines
+    if hmm_changepoints is not None:
+        for i, cp in enumerate(hmm_changepoints):
+            ax.axvline(cp, color='purple', linestyle='--', alpha=0.6,
+                       linewidth=1.5,
+                       label='HMM changepoint' if i == 0 else None)
+ 
+    ax.set_xlabel('Time index')
+    ax.set_ylabel('Distance to nearest fixed point')
+    ax.set_title(title + (' (stable FPs only)' if only_stable else ''))
+ 
+    # Build a legend with stability colors
+    from matplotlib.lines import Line2D
+    legend_elements = [
+        Line2D([0], [0], marker='o', color='w', markerfacecolor='green',
+               markersize=8, label='Nearest = stable'),
+        Line2D([0], [0], marker='o', color='w', markerfacecolor='orange',
+               markersize=8, label='Nearest = saddle'),
+        Line2D([0], [0], marker='o', color='w', markerfacecolor='red',
+               markersize=8, label='Nearest = unstable'),
+    ]
+    if hmm_changepoints is not None:
+        legend_elements.append(
+            Line2D([0], [0], color='purple', linestyle='--',
+                   label='HMM changepoint')
+        )
+    ax.legend(handles=legend_elements, fontsize=9, loc='upper right')
+ 
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+        fig.savefig(os.path.join(output_dir, filename),
+                    bbox_inches='tight', dpi=200)
+    plt.close(fig)
+    print(f"  Saved distance-to-trajectory plot: {filename}")
+
 # ----------------------------------------------------------------
 # Integration helper: call from run_rnn.py after training-- literaly just pop this in that function 
 # ----------------------------------------------------------------
@@ -634,7 +879,22 @@ def run_fixed_point_analysis(net, prep, latent_outs, dataset_name, taste_ind,
         output_dir=fp_dir,
         filename=f'fps_rolling_taste_{taste_ind}_{dataset_name}.png',
     )
- 
+    # NOTE: eventually do get a list of changepoints from the pkl file 
+    # and eventually wire that into here rn 
+    plot_eigenvalue_complex_plane(
+    rolling, hmm_changepoints=None,
+    title=f'Eigenvalue Trajectories — {dataset_name} taste {taste_ind}',
+    output_dir=fp_dir,
+    filename=f'fps_eigenvalues_taste_{taste_ind}_{dataset_name}.png',
+    )
+    plot_distance_to_trajectory(
+        rolling, latent_outs, trial_idx=0,
+        hmm_changepoints=None,
+        title=f'Distance to FP — {dataset_name} taste {taste_ind}',
+        output_dir=fp_dir,
+        filename=f'fps_distance_taste_{taste_ind}_{dataset_name}.png',
+    )
+    
     # --- Save results ---
     save_path = os.path.join(fp_dir,
                              f'fps_taste_{taste_ind}_{dataset_name}.npz')
