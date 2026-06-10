@@ -234,19 +234,19 @@ For this discrete-time system, the stability boundary is `|eigenvalue| = 1`:
 - All `|eig| > 1` → **unstable** (repeller): trajectories are pushed away.
 - Mixed → **saddle**: attracting along some directions, repelling along others. Saddles mediate transitions between attractors.
 
-The magnitude sets the timescale: a mode with `|eig| = λ` decays by a factor of λ each timestep. Healthy attractors sit around 0.8–0.95 (decay over a biologically plausible ~100–200 ms). Complex-conjugate eigenvalue pairs indicate rotational/oscillatory dynamics around the fixed point.
+The magnitude sets the timescale: a mode with `|eig| = λ` decays by a factor of λ each timestep. In my estimation (that is, near as I can figure), healthy attractors sit around 0.8–0.95 (which would indicate some slow decay, plausibly over ~100–200 ms, which wouldn't be crazy for a biological system). Complex-conjugate eigenvalue pairs indicate rotational/oscillatory dynamics around the fixed point.
 
 ### Static vs rolling analysis
 
-**Static (mean input):** Fixed points of the dynamics under a constant input averaged across all timepoints. A coarse reference for the baseline topology. Caveat: the mean input is an average over a non-stationary trial and may never occur at any real timepoint, so it should not be over-interpreted as "the" structure of the dynamics.
+**Static (mean input):** Fixed points of the dynamics under a constant input averaged across all timepoints. A coarse reference for the baseline structur (topology? can I say that?) of the system. BIG Caveat: the mean input is an average over a non-stationary trial and may never occur at any real timepoint, so it should not be over-interpreted as "the" structure of the dynamics. This is more just a poke test to see if there is SOME structure present and if there are plausibly ANY dynamics at play. 
 
-**Rolling (input-conditioned):** Fixed points found at multiple timepoints, each conditioned on the actual encoded input at that moment. These are the fixed points genuinely shaping the trajectory at each point in the trial. This is the primary analysis — it shows how the dynamical landscape reorganizes as the trial unfolds.
+**Rolling (input-conditioned):** Fixed points found at multiple timepoints, each conditioned on the actual encoded input at that moment. I have a TODO item here, which is pipe in actual HMM-inferred changepoints at these spots, but that's for later. As such, right now, these are being evaluated along 10 equally spaced steps in the time series. These are the fixed points genuinely shaping the trajectory at each point in the trial. In my estimation, this is the primary analysis — it shows how the dynamical landscape reorganizes as the trial unfolds.
 
 ### Connection to HMM states
 
-The motivating hypothesis: discrete HMM states in the firing correspond to dynamical regimes (attractor-dwelling), and HMM state transitions correspond to **bifurcations** — qualitative reorganizations of the fixed point landscape (an attractor losing stability, a new fixed point appearing, eigenvalues crossing the unit circle). Passing HMM changepoint times as the rolling `time_indices` lets you check whether transitions the HMM detects coincide with dynamical reorganization.
-
-Note: HMM changepoints must be converted to bin indices to match rolling `time_indices`: `bin_idx = (changepoint_ms - time_lims[0]) / bin_size`.
+The motivating hypothesis: discrete HMM states in the firing correspond to dynamical regimes (attractor-dwelling / oribiting), and HMM state transitions correspond to **bifurcations** — qualitative reorganizations of the fixed point landscape (an attractor losing stability, a new fixed point appearing, eigenvalues crossing the unit circle). Passing HMM changepoint times as the rolling `time_indices` lets you check whether transitions the HMM detects coincide with dynamical reorganization. 
+> NOTE: I have yet to do exactly this -- that's on the dock of things to do!! Right now I'm just sort probing 10 spots along the time series as a test that this works, sorta. 
+> NOTE(2): HMM changepoints must be converted to bin indices to match rolling `time_indices`: `bin_idx = (changepoint_ms - time_lims[0]) / bin_size`.
 
 ### Visualizations
 
