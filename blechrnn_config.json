@@ -3,8 +3,8 @@
         "underlying_functions": "/home/vincent/Senior thesis work/underlying functions",
         "ephys_data": "/home/vincent/Senior thesis work/underlying functions/ephys_data",
         "src": "/home/vincent/Senior thesis work/blechRNN-master/src",
-        "h5_dir": "/home/vincent/Senior thesis work/blechRNN-master/data/nested_h5_file_testing_one",
-        "output_base_dir": "/home/vincent/Senior thesis work/blechRNN-master/jan2026validationR10_fixed_point_testing"
+        "h5_dir": "/home/vincent/Senior thesis work/blechRNN-master/data/nested_h5_files_for_testing",
+        "output_base_dir": "/home/vincent/Senior thesis work/blechRNN-master/jan2026validationR11_fixed_point_testing"
     },
     "parameters": {
         "train_steps": 12000,
@@ -21,6 +21,6 @@
         "patience": 100,
         "validation_mode": "loo",
         "loo_train_steps": 12000,
-        "loo_patience": 20
+        "loo_patience": 40
     }
 }

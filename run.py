@@ -51,8 +51,8 @@ config_path = '/home/vincent/Senior thesis work/blechRNN-master/src/rnn_v2/blech
 # Optuna override (set to True to use optimized params from Optuna)
 # NOTE: you really need to know which ones you want to use. Also, be aware that this applies to ALL datasets (hehe). 
 # ----------------------------------------------------------------
-USE_OPTUNA_PARAMS = False
-OPTUNA_PARAMS_PATH = '/home/vincent/Senior thesis work/blechRNN-master/jan2026validationR1_testing/optuna_optimization/AM26_4Tastes_200826_101430_repacked/optimized_params_used.json'
+USE_OPTUNA_PARAMS = True
+OPTUNA_PARAMS_PATH = '/home/vincent/Senior thesis work/blechRNN-master/jan2026validationR11_fixed_point_testing/optuna_optimization/AM26_4Tastes_200826_101430_repacked/optimized_params_used.json'
 config, paths, params, criterion = load_config(config_path)
 # IF WE DON'T USE THE OPTUNA STUFF (which tbh is a bit scuffed) then we will use the default params in the params 
 if USE_OPTUNA_PARAMS:

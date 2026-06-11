@@ -97,7 +97,7 @@ def create_multiobjective(prep, device, taste_ind, artifacts_dir,
                 scaler=prep['scaler'],
                 pca_obj=prep['pca_obj'],
                 raw_labels_tensor=prep.get('raw_labels_tensor'),
-                n_folds=5,
+                n_folds=10, # we need to ensure that we cut through the noise-- so this goes up at the cost of time...
                 seed=42,
                 verbose=False,
                 taste_ind=taste_ind,
@@ -218,11 +218,16 @@ def create_multitaste_multiobjective(all_preps, device, artifacts_dir,
 # ----------------------------------------------------------------
 # Multi-dataset multi-objective
 # ----------------------------------------------------------------
-
-def create_multidataset_multiobjective(all_dataset_preps, device, artifacts_dir,
-                                       loo_train_steps, loo_patience, corr_metric='poisson'):
+def create_multidataset_multiobjective(all_preps_by_bin, device, artifacts_dir,
+                                       loo_train_steps, loo_patience,
+                                       corr_metric='poisson'):
     """
-    Multi-objective across multiple datasets (each with multiple tastes).
+    Multi-objective across multiple datasets and bin sizes.
+
+    all_preps_by_bin: dict {bin_size: {ds_name: {taste_ind: prep}}}
+        Pre-computed preprocessing for each candidate bin size.
+        The trial's sampled bin_size selects which prep set is used.
+
     Returns (mean_aicr_normalized, mean_neg_correlation).
     """
     def objective(trial):
@@ -230,6 +235,11 @@ def create_multidataset_multiobjective(all_dataset_preps, device, artifacts_dir,
 
         params = define_search_space(trial)
         criterion = get_criterion(params['loss_name'])
+
+        # Select the pre-binned data matching this trial's bin_size
+        bin_size = params['bin_size']
+        all_dataset_preps = all_preps_by_bin[bin_size]
+
         trial_start = time.time()
 
         all_aicrs = []
@@ -285,6 +295,7 @@ def create_multidataset_multiobjective(all_dataset_preps, device, artifacts_dir,
         overall_corr = np.mean(valid_all_corrs) if valid_all_corrs else float('nan')
         elapsed = time.time() - trial_start
 
+        trial.set_user_attr('bin_size', bin_size)
         trial.set_user_attr('per_dataset_aicr_norm', all_aicrs)
         trial.set_user_attr('per_dataset_corr', all_corrs)
         trial.set_user_attr('mean_aicr_norm', overall_aicr)
@@ -292,12 +303,11 @@ def create_multidataset_multiobjective(all_dataset_preps, device, artifacts_dir,
         trial.set_user_attr('time_s', elapsed)
 
         corr_label = 'Poisson' if corr_metric == 'poisson' else 'Gaussian'
-        print(f"  Trial {trial.number}: "
+        print(f"  Trial {trial.number}: bin={bin_size}, "
               f"hidden={params['hidden_size']}, layers={params['rnn_layers']}, "
               f"dropout={params['dropout']:.2f}, lr={params['lr']:.4f} | "
-              f"Overall AICr/obs={overall_aicr:.6f}, Overall r({corr_label})={overall_corr:.3f} | "
-              f"{elapsed:.1f}s")
-
+              f"Overall AICr/obs={overall_aicr:.6f}, "
+              f"Overall r({corr_label})={overall_corr:.3f} | {elapsed:.1f}s")
 
         neg_corr = -overall_corr if not np.isnan(overall_corr) else float('inf')
         return overall_aicr, neg_corr
@@ -447,23 +457,21 @@ def save_multiobjective_results(study, taste_label, output_dir):
                     f"r = {-best_corr.values[1]:.3f}\n")
             for k, v in best_corr.params.items():
                 f.write(f"  {k:<20s} = {v}\n")
-
         f.write(f"\n\nFULL TRIAL LOG:\n")
         f.write(f"{'=' * 70}\n")
-        f.write(f"{'#':>4s} {'AICr/obs':>12s} {'r':>8s} {'hidden':>7s} "
-                f"{'layers':>7s} {'dropout':>8s} {'lr':>10s} {'loss':>7s} "
-                f"{'k':>7s} {'time':>7s}\n")
-        f.write(f"{'-' * 85}\n")
+        f.write(f"{'#':>4s} {'AICr/obs':>12s} {'r':>8s} {'bin':>5s} "
+                f"{'hidden':>7s} {'layers':>7s} {'k':>7s} {'time':>7s}\n")
+        f.write(f"{'-' * 70}\n")
         for t in trials:
             ua = t.user_attrs
+            # bin_size may be in params (searched) or user_attrs (set in objective)
+            bin_size = t.params.get('bin_size', ua.get('bin_size', '?'))
             f.write(f"{t.number:>4d} "
                     f"{t.values[0]:>12.6f} "
                     f"{-t.values[1]:>8.3f} "
+                    f"{bin_size:>5} "
                     f"{t.params.get('hidden_size', '?'):>7} "
                     f"{t.params.get('rnn_layers', '?'):>7} "
-                    f"{t.params.get('dropout', '?'):>8.2f} "
-                    f"{t.params.get('lr', '?'):>10.5f} "
-                    f"{t.params.get('loss_name', '?'):>7s} "
                     f"{ua.get('n_params', '?'):>7} "
                     f"{ua.get('time_s', 0):>6.1f}s\n")
     print(f"  Saved: {txt_path}")

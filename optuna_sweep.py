@@ -67,20 +67,20 @@ except ImportError:
 # CONFIG — edit everything here
 # ================================================================
  
-CONFIG_PATH = '/home/vincent/Senior thesis work/blechRNN-master/config/blechrnn_config.json'
+CONFIG_PATH = '/home/vincent/Senior thesis work/blechRNN-master/src/rnn_v2/blechrnn_config.json'
  
 # Which taste to optimize (0, 1, 2, 3) — only used when ALL_TASTES=False
 SWEEP_TASTE = 0
  
 # Number of Optuna trials
-N_TRIALS = 75
+N_TRIALS = 2
  
 # LOO fold settings
 LOO_TRAIN_STEPS = 12000
 LOO_PATIENCE = 20
  
 # Study name
-STUDY_NAME = 'blechrnn_poisson_aic_optim_v9-7_multidata'
+STUDY_NAME = 'blechrnn_poisson_aic_optim_binsize_v10_multidata'
  
 # Resume a previous study?
 RESUME = True
@@ -113,13 +113,18 @@ PARETO_AICR_WEIGHT = 0.5 # what combination of metric we're optimizing for
 # ================================================================
  
 def define_search_space(trial):
-    """Define the hyperparameter search space for one Optuna trial."""
+    """defines the search space-- espeically with respect to bins. I may want to elim some of these as bin is so important"""
     return {
-        'hidden_size': trial.suggest_int('hidden_size', 8, 128, log=True),
+        'bin_size':    trial.suggest_categorical('bin_size', [25, 30, 35, 40, 45, 50]),
+        'hidden_size': trial.suggest_int('hidden_size', 8, 32, log=True),
         'rnn_layers':  trial.suggest_int('rnn_layers', 1, 4),
-        'dropout':     trial.suggest_float('dropout', 0.0, 0.5, step=0.05),
-        'lr':          trial.suggest_float('lr', 1e-4, 1e-2, log=True),
-        'loss_name':   trial.suggest_categorical('loss_name', ['mse']),
+        # fixing these for now to keep the search more reasonable: 
+        'dropout':     0.2,
+        'lr':          0.001,
+        'loss_name':   'mse',
+        #'dropout':     trial.suggest_float('dropout', 0.0, 0.5, step=0.05),
+        #'lr':          trial.suggest_float('lr', 1e-4, 1e-2, log=True),
+        #'loss_name':   trial.suggest_categorical('loss_name', ['mse']),
     }
  
 # ================================================================
@@ -195,7 +200,7 @@ def _export_best_params(study, taste_label, output_dir):
         'selected_trial': best_trial.number,
         'selected_aicr_per_obs': best_trial.values[0],
         'selected_correlation': -best_trial.values[1],
-        'parameters': best_trial.params,
+        'parameters': {**best_trial.params, 'dropout': 0.2, 'lr': 0.001, 'loss_name': 'mse'},
         'n_pareto_trials': len(study.best_trials),
         'n_trials_total': len(study.trials),
     }
@@ -207,13 +212,19 @@ def _export_best_params(study, taste_label, output_dir):
  
  
 def _run_optimized_on_datasets(study, dataset_subdirs, paths, params):
-    """Run optimized pipeline on all specified datasets using best Pareto trial."""
     best_trial = _select_from_pareto(study, aicr_weight=PARETO_AICR_WEIGHT)
     corr_label = 'Poisson' if CORRELATION_METRIC == 'poisson' else 'Gaussian'
+
+    # Override bin_size with the selected value so the final pipeline re-bins correctly
+    run_params = dict(params)
+    if 'bin_size' in best_trial.params:
+        run_params['bin_size'] = best_trial.params['bin_size']
+        print(f"  Final runs will use bin_size={run_params['bin_size']}")
+
     print(f"\n  Using trial #{best_trial.number} for optimized runs "
           f"(r({corr_label})={-best_trial.values[1]:.3f}, "
           f"AICr/obs={best_trial.values[0]:.6f})")
- 
+
     for subdir in dataset_subdirs:
         full_path = os.path.join(paths['h5_dir'], subdir)
         h5_files = [f for f in os.listdir(full_path) if f.endswith('.h5')]
@@ -224,7 +235,7 @@ def _run_optimized_on_datasets(study, dataset_subdirs, paths, params):
         print(f"\n  Running optimized pipeline for {ds_name}...")
         run_optimized_pipeline(
             best_params=best_trial.params,
-            paths=paths, params=params,
+            paths=paths, params=run_params,     # <-- Now passing in the optimization for bins specifically 
             dataset_name=ds_name,
             full_subdir_path=full_path,
             output_base=paths['output_base_dir'],
@@ -242,68 +253,79 @@ def main():
     # MULTI-DATASET path (independent of per-dataset loop)
     # =============================================================
     if MULTI_DATASET:
-        output_dir = os.path.join(paths['output_base_dir'], 'optuna_multidataset')
-        os.makedirs(output_dir, exist_ok=True)
-        artifacts_dir = os.path.join(output_dir, 'artifacts')
-        os.makedirs(artifacts_dir, exist_ok=True)
- 
-        # Preprocess all datasets and tastes up front
-        all_dataset_preps = {}
-        for subdir in DATASET_SUBDIRS:
-            full_path = os.path.join(paths['h5_dir'], subdir)
-            h5_files = [f for f in os.listdir(full_path) if f.endswith('.h5')]
-            ds_name = os.path.splitext(h5_files[0])[0]
-            data = ephys_data(full_path)
-            data.get_spikes()
-            spike_array = np.stack(data.spikes)
- 
-            taste_preps = {}
-            for ti in range(len(spike_array)):
-                t_spikes = spike_array[ti][...,
-                    params['time_lims'][0]:params['time_lims'][1]]
-                taste_preps[ti] = preprocess_taste(
-                    t_spikes, bin_size=params['bin_size'],
-                    stim_time_val=paths['stim_time_val'],
-                    use_pca=params['use_pca'],
-                )
-            all_dataset_preps[ds_name] = taste_preps
-            print(f"  Preprocessed {ds_name}: {len(taste_preps)} tastes")
- 
-        # Multi-objective: AICr/obs + correlation
-        objective = create_multidataset_multiobjective(
-            all_dataset_preps, device, artifacts_dir,
-            LOO_TRAIN_STEPS, LOO_PATIENCE,
-            corr_metric=CORRELATION_METRIC,
-        )
- 
-        taste_label = 'multidataset'
-        db_path = os.path.join(output_dir, f'optuna_study_{taste_label}.db')
-        storage = f'sqlite:///{db_path}'
- 
-        study = optuna.create_study(
-            study_name=STUDY_NAME, storage=storage,
-            directions=['minimize', 'minimize'],
-            sampler=optuna.samplers.TPESampler(seed=42),
-            load_if_exists=RESUME,
-        )
- 
-        print(f"\n{'=' * 60}")
-        print(f"Optuna multi-dataset study: {N_TRIALS} trials")
-        print(f"Datasets: {list(all_dataset_preps.keys())}")
-        print(f"Objectives: Poisson AICr/obs + {corr_label} loss-LL correlation")
-        print(f"{'=' * 60}\n")
- 
-        study.optimize(objective, n_trials=N_TRIALS, show_progress_bar=True)
- 
-        _print_pareto_results(study, corr_label)
-        save_multiobjective_results(study, taste_label, output_dir)
-        plot_pareto_front(study, taste_label, output_dir, corr_metric=CORRELATION_METRIC)
-        _export_best_params(study, taste_label, output_dir)
- 
-        if RUN_OPTIMIZED:
-            _run_optimized_on_datasets(study, DATASET_SUBDIRS, paths, params)
- 
-        return  # Done — don't fall into per-dataset loop
+            output_dir = os.path.join(paths['output_base_dir'], 'optuna_multidataset')
+            os.makedirs(output_dir, exist_ok=True)
+            artifacts_dir = os.path.join(output_dir, 'artifacts')
+            os.makedirs(artifacts_dir, exist_ok=True)
+
+            # Bin sizes to test — MUST match the categorical in define_search_space
+            BIN_SIZES = [25, 30, 35, 40, 45, 50]
+
+            # Load raw spikes once per dataset, reuse across bin sizes
+            raw_spikes_by_ds = {}
+            for subdir in DATASET_SUBDIRS:
+                full_path = os.path.join(paths['h5_dir'], subdir)
+                h5_files = [f for f in os.listdir(full_path) if f.endswith('.h5')]
+                ds_name = os.path.splitext(h5_files[0])[0]
+                data = ephys_data(full_path)
+                data.get_spikes()
+                raw_spikes_by_ds[ds_name] = np.stack(data.spikes)
+                print(f"  Loaded spikes for {ds_name}")
+
+            # Pre-compute preprocessing for each bin size
+            all_preps_by_bin = {}
+            for bs in BIN_SIZES:
+                all_dataset_preps = {}
+                for ds_name, spike_array in raw_spikes_by_ds.items():
+                    taste_preps = {}
+                    for ti in range(len(spike_array)):
+                        t_spikes = spike_array[ti][...,
+                            params['time_lims'][0]:params['time_lims'][1]]
+                        taste_preps[ti] = preprocess_taste(
+                            t_spikes, bin_size=bs,
+                            stim_time_val=paths['stim_time_val'],
+                            use_pca=params['use_pca'],
+                        )
+                    all_dataset_preps[ds_name] = taste_preps
+                all_preps_by_bin[bs] = all_dataset_preps
+                print(f"  Preprocessed all datasets at bin_size={bs}")
+
+            # Multi-objective over bin size + model params
+            objective = create_multidataset_multiobjective(
+                all_preps_by_bin, device, artifacts_dir,
+                LOO_TRAIN_STEPS, LOO_PATIENCE,
+                corr_metric=CORRELATION_METRIC,
+            )
+
+            taste_label = 'multidataset'
+            db_path = os.path.join(output_dir, f'optuna_study_{taste_label}.db')
+            storage = f'sqlite:///{db_path}'
+
+            study = optuna.create_study(
+                study_name=STUDY_NAME, storage=storage,
+                directions=['minimize', 'minimize'],
+                sampler=optuna.samplers.TPESampler(seed=42),
+                load_if_exists=RESUME,
+            )
+
+            print(f"\n{'=' * 60}")
+            print(f"Optuna multi-dataset study: {N_TRIALS} trials")
+            print(f"Datasets: {list(raw_spikes_by_ds.keys())}")
+            print(f"Bin sizes: {BIN_SIZES}")
+            print(f"Objectives: Poisson AICr/obs + {corr_label} loss-LL correlation")
+            print(f"{'=' * 60}\n")
+
+            study.optimize(objective, n_trials=N_TRIALS, show_progress_bar=True)
+
+            _print_pareto_results(study, corr_label)
+            save_multiobjective_results(study, taste_label, output_dir)
+            plot_pareto_front(study, taste_label, output_dir, corr_metric=CORRELATION_METRIC)
+            _export_best_params(study, taste_label, output_dir)
+
+            if RUN_OPTIMIZED:
+                _run_optimized_on_datasets(study, DATASET_SUBDIRS, paths, params)
+
+            return # no per dataset loop
  
     # =============================================================
     # PER-DATASET loop (MULTI_DATASET is False)

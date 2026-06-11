@@ -26,6 +26,7 @@ from save_outputs import save_to_hdf5, save_latents_parquet, save_firing_parquet
 from neuron_eval import evaluate_neurons
 from preprocessing import preprocess_taste
 from ephys_data import ephys_data
+from fixedpoint import run_fixed_point_analysis
 
 
 def get_criterion(loss_name):
@@ -390,6 +391,14 @@ def run_optimized_pipeline(best_params, paths, params,
     Run the full run_rnn.py pipeline using the optimized parameters.
     Results go to output_base/optuna_optimization/<dataset>/
     """
+    best_params = {
+        'hidden_size': 8,
+        'rnn_layers': 2,
+        'dropout': 0.2,
+        'lr': 0.001,
+        'loss_name': 'mse',
+        **best_params,   # searched params override the defaults
+    }
     print(f"\n{'=' * 60}")
     print(f"Running full pipeline with optimized params")
     print(f"{'=' * 60}")
@@ -397,7 +406,7 @@ def run_optimized_pipeline(best_params, paths, params,
         print(f"  {k}: {v}")
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    criterion = get_criterion(best_params['loss_name'])
+    criterion = get_criterion(best_params.get('loss_name', 'mse'))
 
     opt_output = os.path.join(output_base, 'optuna_optimization', dataset_name)
     plots_dir = os.path.join(opt_output, 'plots')
@@ -509,6 +518,19 @@ def run_optimized_pipeline(best_params, paths, params,
             binned_spikes=prep['binned_spikes'],
             dataset_name=dataset_name, taste_ind=taste_ind,
             output_dir=model_eval_dir, device=device,
+        )
+        fp_dir = os.path.join(model_eval_dir, 'model_eval')
+        run_fixed_point_analysis(
+            net=net,
+            prep=prep,
+            latent_outs=latent_outs,
+            dataset_name=dataset_name,
+            taste_ind=taste_ind,
+            output_dir=fp_dir,
+            device=device,
+            # NOTE: gotta figure out timing as this shit is in ms 
+            # and concatenation plus whatever else 
+            time_indices=None,
         )
 
     plot_mean_neurons_across_tastes(

@@ -24,10 +24,20 @@ def bin_spikes(taste_spikes, bin_size):
     Returns:
         binned_spikes: (trials, neurons, n_bins)
     """
+    # taste_spikes shape: (trials, neurons, time)
+    n_trials, n_neurons, n_time = taste_spikes.shape
+
+    # Truncate to largest multiple of bin_size so reshape works for any bin size-- otherwise amount of time is an issue 
+    # cutting a little time off the end is not the end of the world. 
+    n_bins = n_time // bin_size
+    usable = n_bins * bin_size
+    if usable != n_time:
+        taste_spikes = taste_spikes[..., :usable]
+
     return np.reshape(
         taste_spikes,
-        (*taste_spikes.shape[:2], -1, bin_size)
-    ).sum(-1)
+        (n_trials, n_neurons, n_bins, bin_size)
+    ).sum(axis=-1)
 
 
 def scale_inputs(inputs):
