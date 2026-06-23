@@ -23,5 +23,16 @@
         "validation_mode": "loo",
         "loo_train_steps": 12000,
         "loo_patience": 40
-    }
+    },
+    "paul": {
+    "use_paul_data": true,
+    "paul_data_dir": "/home/vincent/Senior thesis work/blechRNN-master/data/paul_data/spikes/spikes/",
+    "n_neurons": 30,
+    "neuron_base": 1,
+    "duration_ms": 2000,
+    "time_lims": [0, 2000],
+    "stim_time_val": 0
 }
+    
+}
+

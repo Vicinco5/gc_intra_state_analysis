@@ -24,7 +24,8 @@ Outputs:
     - optimized_params.txt with final best values and full sweep log
     - sweep_results.json with all numeric results for later analysis
 """
-
+# NOTE: OOOOOOLLLLLLDDDDDDDDD CODDEEEEEEEEEEE
+# see all the stuff labeled optuna for legit uses of this 
 import os
 import sys
 import json

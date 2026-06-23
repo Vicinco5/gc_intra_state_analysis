@@ -17,6 +17,7 @@ Config parameter "validation_mode":
     - "split" (default): standard train/test split
     - "loo": leave-one-out CV for AIC/BIC, then retrain on all trials
 
+NEW: adding some handling for the Paul data so that we can run off it. 
 """
 import os
 import numpy as np
@@ -61,7 +62,7 @@ config_path = '/home/vincent/Senior thesis work/blechRNN-master/src/rnn_v2/blech
 # NOTE: you really need to know which ones you want to use. Also, be aware that this applies to ALL datasets (hehe). 
 # ----------------------------------------------------------------
 USE_OPTUNA_PARAMS = True
-OPTUNA_PARAMS_PATH = '/home/vincent/Senior thesis work/blechRNN-master/jan2026validationR13_fixed_point_testing/optuna_optimization/AM26_4Tastes_200826_101430_repacked/optimized_params_used.json'
+OPTUNA_PARAMS_PATH = '/home/vincent/Senior thesis work/blechRNN-master/jan2026validationR17_one_layer/optuna_optimization/AM26_4Tastes_200826_101430_repacked/optimized_params_used.json'
 config, paths, params, criterion = load_config(config_path)
 # select trials for the fpf stuff: 
 #PROBE_TRIALS = [0, 5, 10, 15, 20, 25, 30]
@@ -88,7 +89,14 @@ if USE_OPTUNA_PARAMS:
             print(f"         {key}: {old_val} -> {params[key]}")
     criterion = get_criterion(params['loss_name'])
     print(f"  [INFO] Final params: { {k: params[k] for k in ['hidden_size', 'rnn_layers', 'dropout', 'lr', 'loss_name']} }")
-
+################################## PAUL DATA INJECT ###############################
+# this will override the params set if use_paul is true in the blechrnn_config.json !!! 
+USE_PAUL_DATA = config.get('paul', {}).get('use_paul_data', False)
+if USE_PAUL_DATA:
+    from load_paul import load_paul
+    pcfg = config['paul']
+    params['time_lims']     = pcfg['time_lims']     # 2000 ms window, not 1500–7000
+    paths['stim_time_val']  = pcfg['stim_time_val']
 from ephys_data import ephys_data
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -105,20 +113,51 @@ print(f"Validation mode: {validation_mode}")
 #    dropout=0.2
 #    loss_name = 'mse'
 #    rnn_layers = 2
+if USE_PAUL_DATA:
+    spike_array, paul_h5, stats = load_paul(
+        pcfg['paul_data_dir'],
+        n_neurons=pcfg['n_neurons'],
+        duration_ms=pcfg['duration_ms'],
+        neuron_base=pcfg['neuron_base'],
+        h5_out=os.path.join(paths['output_base_dir'], 'paul_data', 'paul_spikes.h5'),
+    )
+    paul_datasets = [('paul_data', spike_array, paul_h5)]
 
-for subdir in sorted(os.listdir(paths['h5_dir'])):
-    full_subdir_path = os.path.join(paths['h5_dir'], subdir)
-    if not os.path.isdir(full_subdir_path):
-        continue
+# for piping in the paul data AND also keeping the rest of this still working: 
+# cheeky lil generator: 
+def iter_datasets():
+    """Yield (dataset_name, spike_array, hdf5_path) for either data source.
+    this is lazy loading, one ds at a time (same behavior as before, just formalized)"""
+    if USE_PAUL_DATA:
+        yield from paul_datasets
+        return
+    for subdir in sorted(os.listdir(paths['h5_dir'])):
+        full_subdir_path = os.path.join(paths['h5_dir'], subdir)
+        if not os.path.isdir(full_subdir_path):
+            continue
+        h5_files = [f for f in os.listdir(full_subdir_path) if f.endswith(".h5")]
+        if len(h5_files) != 1:
+            print(f"Skipping {subdir} — expected 1 .h5 file, found {len(h5_files)}")
+            continue
+        dataset_name = os.path.splitext(h5_files[0])[0]
+        data = ephys_data(full_subdir_path)
+        data.get_spikes()
+        yield dataset_name, np.stack(data.spikes), data.hdf5_path
+# this all is now in generator above: 
+# for subdir in sorted(os.listdir(paths['h5_dir'])):
+#     full_subdir_path = os.path.join(paths['h5_dir'], subdir)
+#     if not os.path.isdir(full_subdir_path):
+#         continue
 
-    h5_files = [f for f in os.listdir(full_subdir_path) if f.endswith(".h5")]
-    if len(h5_files) != 1:
-        print(f"Skipping {subdir} — expected 1 .h5 file, found {len(h5_files)}")
-        continue
+#     h5_files = [f for f in os.listdir(full_subdir_path) if f.endswith(".h5")]
+#     if len(h5_files) != 1:
+#         print(f"Skipping {subdir} — expected 1 .h5 file, found {len(h5_files)}")
+#         continue
 
-    dataset_name = os.path.splitext(h5_files[0])[0]
+#     dataset_name = os.path.splitext(h5_files[0])[0]
+#     print(f"\nProcessing: {dataset_name}")
+for dataset_name, spike_array, hdf5_path in iter_datasets():
     print(f"\nProcessing: {dataset_name}")
-
     # --- Output directories ---
     output_path = os.path.join(paths['output_base_dir'], dataset_name)
     plots_dir = os.path.join(output_path, 'plots')
@@ -128,10 +167,11 @@ for subdir in sorted(os.listdir(paths['h5_dir'])):
     os.makedirs(plots_dir, exist_ok=True)
     os.makedirs(artifacts_dir, exist_ok=True)
 
-    # --- Load spikes ---
-    data = ephys_data(full_subdir_path)
-    data.get_spikes()
-    spike_array = np.stack(data.spikes)
+    # # --- Load spikes ---
+    # # NOTE: also now in the generator
+    # data = ephys_data(full_subdir_path)
+    # data.get_spikes()
+    # spike_array = np.stack(data.spikes)
 
     # --- Accumulators ---
     pred_firing_list = []
@@ -372,8 +412,13 @@ for subdir in sorted(os.listdir(paths['h5_dir'])):
     ) # save to model eval bc why not, that's a natural place for this. 
 
     # --- Save outputs ---
+    # save_to_hdf5(
+    #     data.hdf5_path, pred_firing_list, latent_out_list,
+    #     params['bin_size']
+    # )
+    # slight change here too thanks to paul data
     save_to_hdf5(
-        data.hdf5_path, pred_firing_list, latent_out_list,
+        hdf5_path, pred_firing_list, latent_out_list,
         params['bin_size']
     )
     save_latents_parquet(
