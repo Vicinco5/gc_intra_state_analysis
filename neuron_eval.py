@@ -6,7 +6,17 @@ the model's input during training. (as an aside, this is something that I very m
 
 for this mode: 
 The model has already been trained on all neurons. Instead, this evaluates reconstruction quality
-on a per-neuron basis by slicing the model's existing predictions.
+on a per-neuron basis by slicing the model's existing predictions. This is an imperfect measure for sure-- BUT 
+it is still extremely important. 
+
+6/12/26
+The reason I still think it is a better idea to do LOO for trials instead of neurons: 
+I am trying to get the model to get me consistent fits across trials-- which means I NEED to have 
+solid generalization across trials, as the idea is that the same dynamic is happening ACROSS TRIALS. 
+All input neurons (as a whole) contribute to that dynamical strucutre-- It is scientifically salient to include them. 
+Reconstruction of neurons themselves is actually not really what I am interested in doing, as it goes agains the theory that I am testing 
+I do want to know if a neuron is overly-influential in the model generally-- and it is cool if the model can properly reconstruct it. 
+BUT, on the whole, the neurons are not what I care to check the generalization on. The trials are. 
 
 The idea:
     1. Run a single forward pass through the trained model.
@@ -95,7 +105,7 @@ def evaluate_neurons(
     neuron_dir = os.path.join(output_dir, 'neuron_diagnostics')
     os.makedirs(neuron_dir, exist_ok=True)
 
-    # --- Single forward pass ---
+    # --- Single forward pass to get the data in the first place---
     net.eval()
     with torch.no_grad():
         pred, _ = net(inputs_tensor.to(device))
@@ -110,6 +120,12 @@ def evaluate_neurons(
         g_ll = gaussian_log_likelihood(pred[:, :, j:j+1], labels[:, :, j:j+1])
         per_neuron_gaussian_ll.append(g_ll)
     per_neuron_gaussian_ll = np.array(per_neuron_gaussian_ll)
+    # adding a per-neuron loss: 
+    per_neuron_loss = []
+    for j in range(n_neurons_output): 
+        mse_j = torch.mean((pred[:, :, j] - labels[:, :, j])**2).item()
+        per_neuron_loss.append(mse_j)
+    per_neuron_loss = np.array(per_neuron_loss)
 
     # --- Per-neuron Poisson LL (raw count space) ---
     per_neuron_poisson_ll = None
@@ -161,9 +177,11 @@ def evaluate_neurons(
         mean_rates = binned_spikes.mean(axis=(0, 2))  # (neurons,)
 
     # --- Build results dict ---
+    # I think I may need to add something here to grab the loss. 
     results = dict(
         per_neuron_gaussian_ll=per_neuron_gaussian_ll,
         per_neuron_poisson_ll=per_neuron_poisson_ll,
+        per_neuron_loss=per_neuron_loss,
         mean_rates=mean_rates,
         n_neurons_output=n_neurons_output,
         dataset_name=dataset_name,
@@ -190,6 +208,7 @@ def _plot_neuron_diagnostics(results, dataset_name, taste_ind, neuron_dir):
     g_ll       = results['per_neuron_gaussian_ll']
     p_ll       = results['per_neuron_poisson_ll']
     mean_rates = results['mean_rates']
+    p_nrn_l = results['per_neuron_loss']
     n_neurons  = len(g_ll)
     x          = np.arange(n_neurons)
     has_poisson = p_ll is not None
@@ -318,7 +337,7 @@ def _plot_neuron_diagnostics(results, dataset_name, taste_ind, neuron_dir):
     # ================================================================
     # ROW 2: Gaussian vs Poisson scatter | summary stats | spare
     # ================================================================
-
+    
     # --- [2,0] Gaussian vs Poisson LL scatter ---
     ax = axes[2, 0]
     if has_poisson and n_poisson == n_neurons:
@@ -400,27 +419,43 @@ def _plot_neuron_diagnostics(results, dataset_name, taste_ind, neuron_dir):
             fontsize=9, family='monospace', va='top')
 
     # --- [2,2] Poisson LL vs firing rate ---
-    ax = axes[2, 2]
-    if has_poisson and mean_rates is not None and len(mean_rates) == n_poisson:
-        valid = ~np.isnan(p_ll)
-        ax.scatter(mean_rates[valid], p_ll[valid], c='seagreen', edgecolors='k', s=40, alpha=0.7)
+
+    ax = axes[2,2]
+    if mean_rates is not None and len(mean_rates) == len(p_nrn_l): 
+        valid_l = ~np.isnan(p_nrn_l)
+        ax.scatter(mean_rates, p_nrn_l, c='mediumpurple', edgecolors='k', s=50, alpha=0.7)
         ax.set_xlabel('Mean Firing Rate (counts/bin)')
-        ax.set_ylabel('Poisson LL')
-        ax.set_title('Poisson LL vs Firing Rate')
-        if np.sum(valid) > 2:
-            corr = np.corrcoef(mean_rates[valid], p_ll[valid])[0, 1]
+        ax.set_ylabel('Loss')
+        ax.set_title('Model Loss vs Firing Rate')
+        if np.sum(valid_l) > 2: 
+            corr = np.corrcoef(mean_rates[valid_l], p_nrn_l[valid_l])[0,1]
             ax.text(0.05, 0.95, f'r = {corr:.3f}', transform=ax.transAxes, fontsize=10, va='top')
-    elif has_poisson and mean_rates is not None:
-        ax.text(0.5, 0.5,
-                f'Poisson dim ({n_poisson}) != rate dim ({len(mean_rates)})\n'
-                f'(PCA in use — cannot map)',
+    else: 
+        ax.text(0.5, 0.5, 'Firing rate data unavaliable\nor dim mismatch with loss present', 
                 transform=ax.transAxes, ha='center', va='center', fontsize=10)
-        ax.set_title('Poisson LL vs Firing Rate (N/A with PCA)')
-    else:
-        ax.axis('off')
-        ax.text(0.5, 0.5, 'Poisson data not available',
-                transform=ax.transAxes, ha='center', va='center',
-                fontsize=11, color='gray', style='italic')
+        ax.set_title('Model Loss vs Firing Rate')
+    # we already have this plot lol
+    # ax = axes[2, 2]
+    # if has_poisson and mean_rates is not None and len(mean_rates) == n_poisson:
+    #     valid = ~np.isnan(p_ll)
+    #     ax.scatter(mean_rates[valid], p_ll[valid], c='seagreen', edgecolors='k', s=40, alpha=0.7)
+    #     ax.set_xlabel('Mean Firing Rate (counts/bin)')
+    #     ax.set_ylabel('Poisson LL')
+    #     ax.set_title('Poisson LL vs Firing Rate')
+    #     if np.sum(valid) > 2:
+    #         corr = np.corrcoef(mean_rates[valid], p_ll[valid])[0, 1]
+    #         ax.text(0.05, 0.95, f'r = {corr:.3f}', transform=ax.transAxes, fontsize=10, va='top')
+    # elif has_poisson and mean_rates is not None:
+    #     ax.text(0.5, 0.5,
+    #             f'Poisson dim ({n_poisson}) != rate dim ({len(mean_rates)})\n'
+    #             f'(PCA in use — cannot map)',
+    #             transform=ax.transAxes, ha='center', va='center', fontsize=10)
+    #     ax.set_title('Poisson LL vs Firing Rate (N/A with PCA)')
+    # else:
+    #     ax.axis('off')
+    #     ax.text(0.5, 0.5, 'Poisson data not available',
+    #             transform=ax.transAxes, ha='center', va='center',
+    #             fontsize=11, color='gray', style='italic')
     # ================================================================
     # Save
     # ================================================================

@@ -32,12 +32,21 @@ from visualizations import (
     plot_individual_neurons, plot_mean_neurons_across_tastes,
     plot_pred_vs_true_neurons, plot_aic_bic_summary, plot_loo_diagnostics,
 )
-from save_outputs import save_to_hdf5, save_latents_parquet, save_firing_parquet
+from save_outputs import save_to_hdf5, save_latents_parquet, save_firing_parquet, save_metrics_json
 from neuron_eval import evaluate_neurons
 
 from fixedpoint import run_fixed_point_analysis
 
 from train import MSELoss, smooth_MSELoss
+# fixed point finder analysis: 
+from fpf_analysis import run_fpf_analysis, ms_to_bin
+# also plots: 
+from fixed_points_plots import (fpf_results_to_rolling,
+                               plot_eigenvalue_complex_plane,
+                               plot_distance_to_trajectory, 
+                               plot_frequencies_over_time)
+# changepoint stuff: 
+from unpkl_changepoints import load_changepoints, get_trial_changepoints
 
 def get_criterion(loss_name):
     if loss_name == 'smooth':
@@ -52,8 +61,13 @@ config_path = '/home/vincent/Senior thesis work/blechRNN-master/src/rnn_v2/blech
 # NOTE: you really need to know which ones you want to use. Also, be aware that this applies to ALL datasets (hehe). 
 # ----------------------------------------------------------------
 USE_OPTUNA_PARAMS = True
-OPTUNA_PARAMS_PATH = '/home/vincent/Senior thesis work/blechRNN-master/jan2026validationR11_fixed_point_testing/optuna_optimization/AM26_4Tastes_200826_101430_repacked/optimized_params_used.json'
+OPTUNA_PARAMS_PATH = '/home/vincent/Senior thesis work/blechRNN-master/jan2026validationR13_fixed_point_testing/optuna_optimization/AM26_4Tastes_200826_101430_repacked/optimized_params_used.json'
 config, paths, params, criterion = load_config(config_path)
+# select trials for the fpf stuff: 
+#PROBE_TRIALS = [0, 5, 10, 15, 20, 25, 30]
+PROBE_TRIALS=[]
+# NOTE: probe trials here: 
+PROBE_TRIAL_STRIDE = 6          # probe every Nth trial; 30 trials -> [0,6,12,18,24]
 # IF WE DON'T USE THE OPTUNA STUFF (which tbh is a bit scuffed) then we will use the default params in the params 
 if USE_OPTUNA_PARAMS:
     with open(OPTUNA_PARAMS_PATH, 'r') as f:
@@ -220,7 +234,8 @@ for subdir in sorted(os.listdir(paths['h5_dir'])):
                 artifacts_dir=artifacts_dir,
                 taste_ind=taste_ind,
             )
-
+        # shared accumulation of the final train loss 
+        info_criteria['final_train_loss'] = float(loss[-1]) if len(loss) else None
         info_criteria_all[taste_ind] = info_criteria
         
         # --- LOO diagnostics (only in LOO mode) ---
@@ -283,20 +298,60 @@ for subdir in sorted(os.listdir(paths['h5_dir'])):
             conv_rate, conv_x, params['bin_size'],
             paths['stim_time_val'], dataset_name, taste_ind, plots_dir
         )
+        cps_per_taste = load_changepoints(paths['changepoints_pkl'], dataset_name)  # once per dataset
         # also do some fixed point tomfoolery: 
         fp_dir = os.path.join(model_eval_dir, 'model_eval')
-        run_fixed_point_analysis(
-            net=net,
-            prep=prep,
-            latent_outs=latent_outs,
-            dataset_name=dataset_name,
-            taste_ind=taste_ind,
-            output_dir=fp_dir,
-            device=device,
-            # NOTE: gotta figure out timing as this shit is in ms 
-            # and concatenation plus whatever else 
-            time_indices=None,
-        )
+
+        if cps_per_taste is not None and net.rnn.num_layers == 1:
+            n_trials = latent_outs.shape[1]
+            selected_trials = (PROBE_TRIALS if 'PROBE_TRIALS' in dir()
+                            else list(range(0, n_trials, PROBE_TRIAL_STRIDE)))
+
+            for trial_idx in selected_trials:
+                if trial_idx >= n_trials:
+                    continue
+                cps_ms = get_trial_changepoints(cps_per_taste, taste_ind, trial_idx)
+                if not cps_ms:
+                    print(f"    [FP] taste {taste_ind} trial {trial_idx}: "
+                        f"no valid changepoints — skipping")
+                    continue
+
+                trial_tag = f'taste_{taste_ind}_trial_{trial_idx}'
+                trial_dir = os.path.join(model_eval_dir, 'fixed_points', trial_tag)
+
+                fpf_results = run_fpf_analysis(
+                    net=net, prep=prep, latent_outs=latent_outs,
+                    dataset_name=dataset_name, taste_ind=taste_ind,
+                    output_dir=trial_dir,
+                    device=device, changepoints_ms=cps_ms,
+                    time_lims=params['time_lims'], bin_size=params['bin_size'],
+                    stim_ms=2000, trial_idx=trial_idx,
+                )
+
+                # changepoints in BIN units for the over-time analysis plots
+                cp_bins = [ms_to_bin(t, params['time_lims'], params['bin_size'])
+                        for t in cps_ms]
+
+                # run_fpf_analysis wrote its outputs into trial_dir/fixed_points/;
+                # keep the analysis plots alongside them
+                analysis_dir = os.path.join(trial_dir, 'fixed_points')
+
+                rolling_like = fpf_results_to_rolling(fpf_results)
+                plot_eigenvalue_complex_plane(
+                    rolling_like, hmm_changepoints=cp_bins,
+                    title=f'Eigenvalues — {trial_tag}',
+                    output_dir=analysis_dir, filename=f'fps_eigs_{trial_tag}.png')
+                plot_distance_to_trajectory(
+                    rolling_like, latent_outs, trial_idx=trial_idx,
+                    hmm_changepoints=cp_bins,
+                    title=f'Distance to FP — {trial_tag}',
+                    output_dir=analysis_dir, filename=f'fps_distance_{trial_tag}.png')
+                plot_frequencies_over_time(
+                    rolling_like, hmm_changepoints=cp_bins,
+                    expected_band=(4, 8),
+                    title=f'Frequencies — {trial_tag}',
+                    output_dir=analysis_dir, filename=f'fps_frequencies_{trial_tag}.png')
+
 
     # ----------------------------------------------------------------
     # Post-taste-loop: cross-taste plots and saving
@@ -309,6 +364,12 @@ for subdir in sorted(os.listdir(paths['h5_dir'])):
     )
     plot_pred_vs_true_neurons(pred_firing_list, binned_spikes_list, plots_dir)
     plot_aic_bic_summary(info_criteria_all, dataset_name, model_eval_dir)
+    # NEW: getting some json going 
+    save_metrics_json(
+        info_criteria_all, dataset_name, params,   # or best_params merged in
+        output_dir=model_eval_dir,
+        master_path=os.path.join(model_eval_dir, 'all_fit_metrics.json'),
+    ) # save to model eval bc why not, that's a natural place for this. 
 
     # --- Save outputs ---
     save_to_hdf5(

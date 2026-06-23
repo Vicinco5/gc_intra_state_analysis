@@ -4,16 +4,17 @@
         "ephys_data": "/home/vincent/Senior thesis work/underlying functions/ephys_data",
         "src": "/home/vincent/Senior thesis work/blechRNN-master/src",
         "h5_dir": "/home/vincent/Senior thesis work/blechRNN-master/data/nested_h5_files_for_testing",
-        "output_base_dir": "/home/vincent/Senior thesis work/blechRNN-master/jan2026validationR11_fixed_point_testing"
+        "output_base_dir": "/home/vincent/Senior thesis work/blechRNN-master/jan2026validationR17_one_layer",
+        "changepoints_pkl":"/home/vincent/Senior thesis work/blechRNN-master/data/changepoint_pkl/"
     },
     "parameters": {
-        "train_steps": 12000,
-        "hidden_size": 8,
-        "rnn_layers": 2,
+        "train_steps": 15000,
+        "hidden_size": 10,
+        "rnn_layers": 3,
         "dropout": 0.2,
         "lr": 0.001,
         "loss_name": "mse",
-        "bin_size": 50,
+        "bin_size": 25,
         "train_test_split": 0.75,
         "use_pca": true,
         "retrain": true,

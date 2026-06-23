@@ -44,22 +44,31 @@ def load_config(config_path):
     params.setdefault('lr', 0.001)
 
     # --- Paths ---
-    h5_dir = config['paths']['h5_dir']
-    output_base_dir = config['paths']['output_base_dir']
-    stim_time_val = 2000 - params['time_lims'][0]
+    paths = dict(config['paths'])
 
-    pred_fr_dir = os.path.join(output_base_dir, 'pred_fr')
-    pred_lat_dir = os.path.join(output_base_dir, 'pred_latent')
-    os.makedirs(pred_fr_dir, exist_ok=True)
-    os.makedirs(pred_lat_dir, exist_ok=True)
+    output_base_dir = paths['output_base_dir']
+    paths['stim_time_val'] = 2000 - params['time_lims'][0]
+    paths['pred_fr_dir'] = os.path.join(output_base_dir, 'pred_fr')
+    paths['pred_lat_dir'] = os.path.join(output_base_dir, 'pred_latent')
+    os.makedirs(paths['pred_fr_dir'], exist_ok=True)
+    os.makedirs(paths['pred_lat_dir'], exist_ok=True)
 
-    paths = dict(
-        h5_dir=h5_dir,
-        output_base_dir=output_base_dir,
-        pred_fr_dir=pred_fr_dir,
-        pred_lat_dir=pred_lat_dir,
-        stim_time_val=stim_time_val,
-    )
+    #h5_dir = config['paths']['h5_dir']
+    #output_base_dir = config['paths']['output_base_dir']
+    #stim_time_val = 2000 - params['time_lims'][0]
+
+    #pred_fr_dir = os.path.join(output_base_dir, 'pred_fr')
+    #pred_lat_dir = os.path.join(output_base_dir, 'pred_latent')
+    #os.makedirs(pred_fr_dir, exist_ok=True)
+    #os.makedirs(pred_lat_dir, exist_ok=True)
+
+    # paths = dict(
+    #     h5_dir=h5_dir,
+    #     output_base_dir=output_base_dir,
+    #     pred_fr_dir=pred_fr_dir,
+    #     pred_lat_dir=pred_lat_dir,
+    #     stim_time_val=stim_time_val,
+    # )
 
     # --- Loss function ---
     from train import MSELoss, smooth_MSELoss

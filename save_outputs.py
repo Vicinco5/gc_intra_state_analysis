@@ -6,7 +6,7 @@ import os
 import numpy as np
 import polars as pl
 import tables
-
+import json
 
 def save_to_hdf5(hdf5_path, pred_firing_list, latent_out_list, bin_size):
     """
@@ -119,3 +119,68 @@ def save_firing_parquet(
     path2 = os.path.join(pred_fr_dir, f"{dataset_name}_raw_predicted_firing.parquet")
     combined_df.write_parquet(path2)
     print(f"  Also saved to: {path2}")
+
+# helper to save metrics that I generate as a result of these various trainings: 
+def save_metrics_json(info_criteria_all, dataset_name, params, output_dir,
+                      master_path=None):
+    """
+    Extract scalar fit metrics per taste and write to JSON for supplementals.
+    THIS IS GOING TO BE IMPORTANT WHEN I NEED THIS DATA TO JUSTIFY MY MODEL FITS 
+    Writes a per-dataset JSON, and optionally appends/updates a master
+    JSON keyed by dataset name so all datasets accumulate in one file.
+    """
+    # Scalar fields worth keeping (skip the big per-fold arrays)
+    scalar_keys = [
+        'log_likelihood', 'aic', 'bic', 'aicr',                 # Gaussian
+        'poisson_log_likelihood', 'poisson_aic', 'poisson_bic', # Poisson
+        'poisson_aicr',
+        'loss_gaussian_corr', 'loss_poisson_corr',              # Model generalization consistency keys right here are pretty important 
+        'n_params', 'n_observations', 'n_trials',
+        'final_train_loss',
+    ]
+
+    def _clean(v):
+        # Make numpy scalars JSON-safe; pass through None/str/float
+        if isinstance(v, (np.floating, np.integer)):
+            return v.item()
+        if isinstance(v, float) and np.isnan(v):
+            return None
+        return v
+
+    dataset_metrics = {
+        'dataset': dataset_name,
+        'hyperparameters': {
+            k: params.get(k) for k in
+            ['bin_size', 'hidden_size', 'rnn_layers', 'dropout', 'lr',
+             'loss_name', 'validation_mode', 'use_pca']
+        },
+        'per_taste': {},
+    }
+
+    for taste_ind, ic in info_criteria_all.items():
+        dataset_metrics['per_taste'][str(taste_ind)] = {
+            k: _clean(ic.get(k)) for k in scalar_keys if k in ic
+        }
+
+    # --- Per-dataset file ---
+    per_ds_path = os.path.join(output_dir, f'fit_metrics_{dataset_name}.json')
+    with open(per_ds_path, 'w') as f:
+        json.dump(dataset_metrics, f, indent=2)
+    print(f"  [INFO] Saved fit metrics: {per_ds_path}")
+
+    # --- Optional master aggregate (keyed by dataset)---
+    # depsite being optional, you will definitely want this 
+    if master_path is not None:
+        master = {}
+        if os.path.exists(master_path):
+            try:
+                with open(master_path, 'r') as f:
+                    master = json.load(f)
+            except Exception:
+                master = {}
+        master[dataset_name] = dataset_metrics
+        with open(master_path, 'w') as f:
+            json.dump(master, f, indent=2)
+        print(f"  [INFO] Updated master metrics: {master_path}")
+
+    return dataset_metrics

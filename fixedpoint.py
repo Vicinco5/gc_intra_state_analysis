@@ -27,6 +27,9 @@ Usage:
     rolling = rolling_fixed_points(net, latent_trajectories, encoded_inputs,
                                     time_indices=[2250, 3000, 3400, 3800])
                                     # time indicies should be when the hmm detects changepoints 
+
+
+      NOTE: OLDDDDDD
 """
 
 import numpy as np
@@ -37,6 +40,12 @@ from sklearn.cluster import DBSCAN
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import os 
+
+#### THE FIXED POINT FINDER STUFF
+import sys
+sys.path.append('/home/vincent/Senior thesis work/blechRNN-master/fixed-point-finder')
+sys.path.append('/home/vincent/Senior thesis work/blechRNN-master/recurrent-whisperer')
+from FixedPointFinderTorch import FixedPointFinderTorch as FixedPointFinder
 
 # helpers! 
 def extract_rnn_cell(net): 

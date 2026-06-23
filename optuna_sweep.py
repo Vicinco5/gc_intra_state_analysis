@@ -56,7 +56,7 @@ import json
 import numpy as np
 import torch
 from datetime import datetime
- 
+from optuna.trial import FixedTrial
 try:
     import optuna
 except ImportError:
@@ -73,14 +73,14 @@ CONFIG_PATH = '/home/vincent/Senior thesis work/blechRNN-master/src/rnn_v2/blech
 SWEEP_TASTE = 0
  
 # Number of Optuna trials
-N_TRIALS = 2
+N_TRIALS = 37
  
 # LOO fold settings
 LOO_TRAIN_STEPS = 12000
-LOO_PATIENCE = 20
+LOO_PATIENCE = 40
  
 # Study name
-STUDY_NAME = 'blechrnn_poisson_aic_optim_binsize_v10_multidata'
+STUDY_NAME = 'blechrnn_poisson_aic_optim_binsize_v15_multidata_one_layer_only'
  
 # Resume a previous study?
 RESUME = True
@@ -104,7 +104,17 @@ DATASET_SUBDIRS = [
 # 'poisson' = loss vs held-out Poisson LL (raw count space)
 # 'gaussian' = loss vs held-out Gaussian LL (z-scored space)
 CORRELATION_METRIC = 'poisson'
-PARETO_AICR_WEIGHT = 0.5 # what combination of metric we're optimizing for
+# WHY I BIAS TOWARDS CORRELATION: 
+# AICr is great and all, but correlation is the informative metric with respect to how well the model generalizes to the held-out data 
+# This generalization consistency is extremely important for the repeatability of the dynamics we observe. 
+# in general, I am (very) happy with this balance
+# reason being, much more extreme bias to correlation and I begin to encourage the model to train on noise. 
+# AICr is about parameter efficiency (which would imply structure beyond just noise), so it is important to guard against noise. 
+PARETO_AICR_WEIGHT = 0.4 # what combination of metric we're optimizing for
+# on run 13, we had a trial that was the best r correlate and effectively tied for the best AICr (1.61 (16) vs 1.60)
+# trial 16: 
+#  16    AICr/obs 1.610216  r:  0.795    bin size 25    hidden_state  10      layers 3       ?  355.3s
+
 # see: 
 # 0.0 = pure correlation, 1.0 = pure AICr, 0.5 = balanced
  
@@ -115,15 +125,18 @@ PARETO_AICR_WEIGHT = 0.5 # what combination of metric we're optimizing for
 def define_search_space(trial):
     """defines the search space-- espeically with respect to bins. I may want to elim some of these as bin is so important"""
     return {
+        # 'bin_size': 25 # fixed bin size as that is clearly what is best
         'bin_size':    trial.suggest_categorical('bin_size', [25, 30, 35, 40, 45, 50]),
-        'hidden_size': trial.suggest_int('hidden_size', 8, 32, log=True),
-        'rnn_layers':  trial.suggest_int('rnn_layers', 1, 4),
+        'hidden_size': trial.suggest_int('hidden_size', 8, 50, log=True),
+        #'rnn_layers':  trial.suggest_int('rnn_layers', 1, 4),
+        'rnn_layers': 1, # literally fixing the RNN to 1 layer
         # fixing these for now to keep the search more reasonable: 
-        'dropout':     0.2,
-        'lr':          0.001,
+        #'dropout':     0.2,
+        'dropout':     0.0, # with one layer dropout is 0
+        #'lr':          0.001,
         'loss_name':   'mse',
-        #'dropout':     trial.suggest_float('dropout', 0.0, 0.5, step=0.05),
-        #'lr':          trial.suggest_float('lr', 1e-4, 1e-2, log=True),
+        #'dropout':     trial.suggest_float('dropout', 0.1, 0.3, step=0.05),
+        'lr':          trial.suggest_float('lr', 5e-4, 4e-3, log=True),
         #'loss_name':   trial.suggest_categorical('loss_name', ['mse']),
     }
  
@@ -145,7 +158,7 @@ from optuna_multiobjective import (
     save_multiobjective_results,
 )
 
-def _select_from_pareto(study, aicr_weight=0.5):
+def _select_from_pareto(study, aicr_weight=0.4):
     """Select best trial from Pareto front using weighted combination."""
     pareto = study.best_trials
     if len(pareto) == 1:
@@ -190,6 +203,7 @@ def _print_pareto_results(study, corr_label):
 def _export_best_params(study, taste_label, output_dir):
     """Export best params from Pareto front using weighted selection."""
     best_trial = _select_from_pareto(study, aicr_weight=PARETO_AICR_WEIGHT)
+    full_params = _full_params(best_trial)
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     export = {
         'timestamp': timestamp,
@@ -200,7 +214,8 @@ def _export_best_params(study, taste_label, output_dir):
         'selected_trial': best_trial.number,
         'selected_aicr_per_obs': best_trial.values[0],
         'selected_correlation': -best_trial.values[1],
-        'parameters': {**best_trial.params, 'dropout': 0.2, 'lr': 0.001, 'loss_name': 'mse'},
+        'parameters': full_params, # now explicitly getting the full params 
+        #'parameters': {**best_trial.params, 'dropout': 0.2, 'lr': 0.001, 'loss_name': 'mse'},
         'n_pareto_trials': len(study.best_trials),
         'n_trials_total': len(study.trials),
     }
@@ -210,10 +225,15 @@ def _export_best_params(study, taste_label, output_dir):
     print(f"  Saved best params: {export_path}")
     return best_trial
  
- 
+def _full_params(best_trial):
+    """Complete param dict including fixed (non-suggested) values, by replaying
+    define_search_space with the trial's recorded suggested params."""
+    return define_search_space(FixedTrial(best_trial.params))
+
 def _run_optimized_on_datasets(study, dataset_subdirs, paths, params):
     best_trial = _select_from_pareto(study, aicr_weight=PARETO_AICR_WEIGHT)
     corr_label = 'Poisson' if CORRELATION_METRIC == 'poisson' else 'Gaussian'
+    full_params = _full_params(best_trial)          # includes rnn_layers=1, dropout=0.0, loss_name
 
     # Override bin_size with the selected value so the final pipeline re-bins correctly
     run_params = dict(params)
@@ -234,8 +254,10 @@ def _run_optimized_on_datasets(study, dataset_subdirs, paths, params):
         ds_name = os.path.splitext(h5_files[0])[0]
         print(f"\n  Running optimized pipeline for {ds_name}...")
         run_optimized_pipeline(
-            best_params=best_trial.params,
-            paths=paths, params=run_params,     # <-- Now passing in the optimization for bins specifically 
+            #best_params=best_trial.params,
+            best_params=full_params, # forcing to use params it had found
+            paths=paths, 
+            params=run_params,     # <-- Now passing in the optimization for bins specifically 
             dataset_name=ds_name,
             full_subdir_path=full_path,
             output_base=paths['output_base_dir'],
